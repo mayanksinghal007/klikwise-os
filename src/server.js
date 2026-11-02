@@ -29,6 +29,16 @@ const MIME_TYPES = {
 };
 
 function parseJsonBody(req) {
+  if (req.body && typeof req.body === 'object') {
+    return Promise.resolve(req.body);
+  }
+  if (req.body && typeof req.body === 'string') {
+    try {
+      return Promise.resolve(JSON.parse(req.body));
+    } catch (e) {
+      return Promise.resolve({});
+    }
+  }
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => { body += chunk; });
@@ -52,9 +62,17 @@ function sendJson(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
-const server = http.createServer(async (req, res) => {
+async function handleRequest(req, res) {
   const parsedUrl = url.parse(req.url, true);
-  const pathname = parsedUrl.pathname;
+  let pathname = parsedUrl.pathname;
+
+  // Support Vercel serverless [...slug] route fallback
+  if (req.query && req.query.slug) {
+    const slug = Array.isArray(req.query.slug) ? req.query.slug.join('/') : req.query.slug;
+    if (!pathname.includes(slug)) {
+      pathname = `/api/${slug}`;
+    }
+  }
 
   // Handle CORS Pre-flight
   if (req.method === 'OPTIONS') {
@@ -68,10 +86,10 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- API Routes ---
-  if (pathname.startsWith('/api/')) {
+  if (pathname.startsWith('/api')) {
     try {
       // 1. Status / Overview
-      if (pathname === '/api/status' && req.method === 'GET') {
+      if ((pathname === '/api/status' || pathname === '/api' || pathname === '/api/') && req.method === 'GET') {
         const tools = toolRegistry.listAll();
         const agents = multiAgentCenter.listAgents();
         const workflows = workflowEngine.listWorkflows();
@@ -266,14 +284,19 @@ const server = http.createServer(async (req, res) => {
       res.end(content);
     }
   });
-});
+}
 
-server.listen(PORT, () => {
-  console.log(`\n=========================================================`);
-  console.log(`  🚀 KLIKWise OS v2.0 Running at http://localhost:${PORT}`);
-  console.log(`  👑 Founder: Mayank Aggarwal | Agency Growth OS`);
-  console.log(`  ⚡ 17 Modules, 12 Specialized Agents & Command Center Ready`);
-  console.log(`=========================================================\n`);
-});
+const server = http.createServer(handleRequest);
+
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`\n=========================================================`);
+    console.log(`  🚀 KLIKWise OS v2.0 Running at http://localhost:${PORT}`);
+    console.log(`  👑 Founder: Mayank Aggarwal | Agency Growth OS`);
+    console.log(`  ⚡ 17 Modules, 12 Specialized Agents & Command Center Ready`);
+    console.log(`=========================================================\n`);
+  });
+}
 
 module.exports = server;
+module.exports.handleRequest = handleRequest;
