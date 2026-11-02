@@ -172,9 +172,61 @@ async function handleRequest(req, res) {
       if (pathname === '/api/whatsapp/status' && req.method === 'GET') {
         return sendJson(res, 200, {
           isConfigured: whatsappManager.isConfigured(),
+          businessNumber: whatsappManager.businessNumber,
           coexistence: whatsappManager.getCoexistenceStatus(),
-          approvedTemplates: whatsappManager.getApprovedTemplates()
+          approvedTemplates: whatsappManager.getApprovedTemplates(),
+          webhookVerifyToken: whatsappManager.webhookVerifyToken
         });
+      }
+
+      // Save or Update WhatsApp Cloud API Credentials
+      if (pathname === '/api/whatsapp/config' && req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const configured = whatsappManager.updateConfig({
+          phoneNumberId: body.phoneNumberId,
+          accessToken: body.accessToken,
+          webhookVerifyToken: body.webhookVerifyToken,
+          businessNumber: body.businessNumber
+        });
+
+        try {
+          const envPath = path.resolve(__dirname, '../.env');
+          if (fs.existsSync(envPath)) {
+            let envContent = fs.readFileSync(envPath, 'utf8');
+            if (!envContent.includes('WHATSAPP_PHONE_NUMBER_ID=')) {
+              envContent += `\nWHATSAPP_PHONE_NUMBER_ID=${body.phoneNumberId || ''}\nWHATSAPP_ACCESS_TOKEN=${body.accessToken || ''}\nWHATSAPP_BUSINESS_NUMBER=${body.businessNumber || '+919217756033'}\n`;
+            } else {
+              if (body.phoneNumberId) envContent = envContent.replace(/WHATSAPP_PHONE_NUMBER_ID=.*/, `WHATSAPP_PHONE_NUMBER_ID=${body.phoneNumberId}`);
+              if (body.accessToken) envContent = envContent.replace(/WHATSAPP_ACCESS_TOKEN=.*/, `WHATSAPP_ACCESS_TOKEN=${body.accessToken}`);
+              if (body.businessNumber) envContent = envContent.replace(/WHATSAPP_BUSINESS_NUMBER=.*/, `WHATSAPP_BUSINESS_NUMBER=${body.businessNumber}`);
+            }
+            fs.writeFileSync(envPath, envContent, 'utf8');
+          }
+        } catch (e) {
+          console.warn('[Env] Could not write to .env:', e.message);
+        }
+
+        security.logAction({
+          action: 'WHATSAPP_CONFIG_UPDATED',
+          actor: 'Mayank Aggarwal',
+          resource: 'WHATSAPP_CLOUD_API',
+          details: { configured, businessNumber: whatsappManager.businessNumber }
+        });
+
+        return sendJson(res, 200, {
+          success: true,
+          configured,
+          businessNumber: whatsappManager.businessNumber,
+          coexistence: whatsappManager.getCoexistenceStatus()
+        });
+      }
+
+      // Send Instant Test Message to Mayank Aggarwal's WhatsApp Number
+      if (pathname === '/api/whatsapp/test-send' && req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const targetNumber = body.to || whatsappManager.businessNumber;
+        const result = await whatsappManager.sendTestMessage(targetNumber);
+        return sendJson(res, 200, result);
       }
 
       if (pathname === '/api/whatsapp/send' && req.method === 'POST') {

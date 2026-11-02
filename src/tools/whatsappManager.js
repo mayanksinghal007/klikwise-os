@@ -25,6 +25,23 @@ class WhatsAppManager {
     return Boolean(this.phoneNumberId && this.accessToken && this.accessToken.length > 10);
   }
 
+  updateConfig({ phoneNumberId, accessToken, webhookVerifyToken, businessNumber }) {
+    if (phoneNumberId) this.phoneNumberId = phoneNumberId.trim();
+    if (accessToken) this.accessToken = accessToken.trim();
+    if (webhookVerifyToken) this.webhookVerifyToken = webhookVerifyToken.trim();
+    if (businessNumber) this.businessNumber = businessNumber.trim();
+    return this.isConfigured();
+  }
+
+  async sendTestMessage(targetNumber = this.businessNumber) {
+    const cleanNumber = targetNumber.replace(/[^\d+]/g, '').replace(/^\+/, '');
+    return this.sendMessage({
+      to: cleanNumber,
+      text: `🚀 KLIKWise OS WhatsApp Connected!\n\nHello Mayank Aggarwal, your WhatsApp Cloud API is now active and synchronized with KLIKWise OS.\n\nConnected Number: ${this.businessNumber}\nTimestamp: ${new Date().toLocaleString('en-IN')}`,
+      hasOptIn: true
+    });
+  }
+
   /**
    * Evaluates WhatsApp Business Coexistence compatibility
    * Allows Mayank Aggarwal to use his existing WhatsApp Business App on his phone

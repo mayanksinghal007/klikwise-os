@@ -535,14 +535,70 @@ function renderAiSales(el) {
         </div>
       </div>
 
-      <!-- Right: Meta WhatsApp Coexistence & Rules Panel -->
+      <!-- Right: Meta WhatsApp Cloud API Connection & Coexistence Panel -->
       <div class="info-panel">
+        <!-- WhatsApp API & Number Connection Card -->
+        <div class="info-card" style="border: 1px solid var(--cyan); background: rgba(0, 242, 254, 0.04);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h4 style="margin-bottom:0;"><span style="font-size:16px;">📱</span> Connect WhatsApp API</h4>
+            <span class="system-status-pill" id="wa-connection-pill" style="font-size:10px; padding:3px 8px; color:var(--cyan); border-color:var(--cyan);">
+              ${state.whatsappConfigured ? '🟢 CONNECTED' : '🟡 NUMBER LINKED'}
+            </span>
+          </div>
+
+          <div class="form-group" style="margin-bottom:8px;">
+            <label class="form-label" style="font-size:11px;">Your Registered Business Number</label>
+            <input type="text" id="wa-input-number" class="form-input" style="font-size:12px; padding:7px 10px;" value="+919217756033" placeholder="+919217756033">
+          </div>
+
+          <div class="form-group" style="margin-bottom:8px;">
+            <label class="form-label" style="font-size:11px;">Meta Phone Number ID</label>
+            <input type="text" id="wa-input-phone-id" class="form-input" style="font-size:12px; padding:7px 10px;" placeholder="e.g. 106598234892182">
+          </div>
+
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label" style="font-size:11px;">Meta Access Token (System User / Permanent)</label>
+            <input type="password" id="wa-input-token" class="form-input" style="font-size:12px; padding:7px 10px;" placeholder="EAAG... (from Meta Business Suite)">
+          </div>
+
+          <!-- Webhook Info Box -->
+          <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:6px; padding:8px 10px; margin-bottom:10px; font-size:11px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+              <span style="color:var(--text-muted);">Webhook URL:</span>
+              <button style="background:none; border:none; color:var(--cyan); cursor:pointer; font-size:10px;" onclick="copyToClipboard('https://klikwise-os.vercel.app/api/whatsapp/webhook')">Copy</button>
+            </div>
+            <div style="font-family:var(--font-mono); color:var(--cyan); word-break:break-all; font-size:10px;">
+              https://klikwise-os.vercel.app/api/whatsapp/webhook
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:6px; margin-bottom:2px;">
+              <span style="color:var(--text-muted);">Verify Token:</span>
+              <span style="font-family:var(--font-mono); color:#fff; font-size:10px;">klikwise_verify_token_secure_2026</span>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn-primary" style="width:100%; justify-content:center; padding:8px; font-size:12px;" onclick="saveWhatsAppConfig()">
+              💾 Save & Link WhatsApp API
+            </button>
+            <button class="btn-secondary" style="width:100%; justify-content:center; padding:8px; font-size:12px;" onclick="sendTestWhatsAppToMyNumber()">
+              📲 Send Test WhatsApp to +91 9217756033
+            </button>
+            <a href="https://wa.me/919217756033" target="_blank" class="btn-secondary" style="text-align:center; text-decoration:none; padding:7px; font-size:11px; color:var(--cyan);">
+              💬 Open WhatsApp Chat with Mayank
+            </a>
+          </div>
+        </div>
+
         <div class="info-card">
           <h4><span>💬</span> Meta WhatsApp Status</h4>
           <div style="font-size:12px; display:flex; flex-direction:column; gap:8px;">
             <div style="display:flex; justify-content:space-between;">
               <span style="color:var(--text-muted);">Coexistence Mode:</span>
-              <span style="color:var(--green); font-weight:600;">ACTIVE</span>
+              <span style="color:var(--green); font-weight:600;">ACTIVE (Mobile App Safe)</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--text-muted);">Linked Number:</span>
+              <span style="color:var(--cyan); font-weight:600;">+91 9217756033</span>
             </div>
             <div style="display:flex; justify-content:space-between;">
               <span style="color:var(--text-muted);">Service Window:</span>
@@ -641,6 +697,59 @@ function clearSalesChat() {
     }
   ];
   renderChatMessages();
+}
+
+async function saveWhatsAppConfig() {
+  const businessNumber = document.getElementById('wa-input-number')?.value.trim() || '+919217756033';
+  const phoneNumberId = document.getElementById('wa-input-phone-id')?.value.trim() || '';
+  const accessToken = document.getElementById('wa-input-token')?.value.trim() || '';
+
+  try {
+    const res = await fetch('/api/whatsapp/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        businessNumber,
+        phoneNumberId,
+        accessToken,
+        webhookVerifyToken: 'klikwise_verify_token_secure_2026'
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      state.whatsappConfigured = data.configured;
+      alert(`🎉 WhatsApp Settings Saved!\n\nRegistered Number: ${data.businessNumber}\nAPI Status: ${data.configured ? 'LIVE & ACTIVE' : 'Saved (Ready for Meta Keys)'}\n\nCoexistence is ACTIVE — you can continue using the WhatsApp Business app on your phone without interruption.`);
+      const pill = document.getElementById('wa-connection-pill');
+      if (pill) {
+        pill.innerText = data.configured ? '🟢 CONNECTED' : '🟡 NUMBER LINKED';
+        pill.style.color = data.configured ? 'var(--green)' : 'var(--cyan)';
+        pill.style.borderColor = data.configured ? 'var(--green)' : 'var(--cyan)';
+      }
+    }
+  } catch (err) {
+    alert('Error saving WhatsApp configuration: ' + err.message);
+  }
+}
+
+async function sendTestWhatsAppToMyNumber() {
+  const number = document.getElementById('wa-input-number')?.value.trim() || '+919217756033';
+  try {
+    const res = await fetch('/api/whatsapp/test-send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: number })
+    });
+    const data = await res.json();
+    if (data.status === 'SENT') {
+      alert(`✅ Real WhatsApp Message Sent via Meta Cloud API!\nMessage ID: ${data.messageId}\nCheck your WhatsApp on +91 9217756033!`);
+    } else if (data.status === 'SIMULATED_SENT') {
+      alert(`📲 Simulated WhatsApp Sent to ${data.to}!\n\nMessage Content:\n"${data.message}"\n\n(Tip: Enter your Meta Phone Number ID and Access Token above to route live via Meta telecom network).`);
+    } else {
+      alert(`WhatsApp Status: ${data.status}\n${data.reason || data.error || ''}`);
+    }
+  } catch (err) {
+    alert('Failed to send test WhatsApp: ' + err.message);
+  }
 }
 
 // ==========================================================================
