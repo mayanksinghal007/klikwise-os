@@ -66,15 +66,13 @@ async function handleRequest(req, res) {
   const parsedUrl = url.parse(req.url, true);
   let pathname = parsedUrl.pathname;
 
-  // Resolve true route on Vercel (supporting serverless rewrites and slug params)
-  if (req.headers && req.headers['x-matched-path']) {
-    pathname = req.headers['x-matched-path'];
-  } else if (req.query && req.query.slug) {
-    const slug = Array.isArray(req.query.slug) ? req.query.slug.join('/') : req.query.slug;
-    pathname = `/api/${slug}`;
-  } else if (parsedUrl.query && parsedUrl.query.slug) {
-    const slug = Array.isArray(parsedUrl.query.slug) ? parsedUrl.query.slug.join('/') : parsedUrl.query.slug;
-    pathname = `/api/${slug}`;
+  // Resolve true route on Vercel (supporting rewrite parameter ?path=...)
+  const subPath = (req.query && req.query.path) || (parsedUrl.query && parsedUrl.query.path);
+  if (subPath) {
+    const cleanSubPath = Array.isArray(subPath) ? subPath.join('/') : subPath;
+    pathname = `/api/${cleanSubPath}`;
+  } else if (pathname === '/api' || pathname === '/api/') {
+    pathname = '/api/status';
   }
 
   // Handle CORS Pre-flight
