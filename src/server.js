@@ -66,12 +66,15 @@ async function handleRequest(req, res) {
   const parsedUrl = url.parse(req.url, true);
   let pathname = parsedUrl.pathname;
 
-  // Support Vercel serverless [...slug] route fallback
-  if (req.query && req.query.slug) {
+  // Resolve true route on Vercel (supporting serverless rewrites and slug params)
+  if (req.headers && req.headers['x-matched-path']) {
+    pathname = req.headers['x-matched-path'];
+  } else if (req.query && req.query.slug) {
     const slug = Array.isArray(req.query.slug) ? req.query.slug.join('/') : req.query.slug;
-    if (!pathname.includes(slug)) {
-      pathname = `/api/${slug}`;
-    }
+    pathname = `/api/${slug}`;
+  } else if (parsedUrl.query && parsedUrl.query.slug) {
+    const slug = Array.isArray(parsedUrl.query.slug) ? parsedUrl.query.slug.join('/') : parsedUrl.query.slug;
+    pathname = `/api/${slug}`;
   }
 
   // Handle CORS Pre-flight
@@ -259,7 +262,7 @@ async function handleRequest(req, res) {
         return sendJson(res, 200, { logs: security.getRecentAuditLogs(50) });
       }
 
-      return sendJson(res, 404, { error: 'API route not found' });
+      return sendJson(res, 404, { error: 'API route not found', path: pathname });
     } catch (err) {
       console.error('[API Error]', err);
       return sendJson(res, 500, { error: err.message });
