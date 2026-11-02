@@ -1,0 +1,205 @@
+version: '3.8'
+
+# =================================================================
+# KLIKWise OS — Full Enterprise Production Stack
+# Orchestrates KLIKWise OS Core + All 7 Open-Source Upstream Engines
+# =================================================================
+
+services:
+  # ---------------------------------------------------------------
+  # 0. KLIKWise OS Core Application (Command Center & AI Engine)
+  # ---------------------------------------------------------------
+  klikwise-core:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: klikwise_core
+    restart: unless-stopped
+    ports:
+      - "3300:3300"
+    environment:
+      - PORT=3300
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-klikwise_secure_pass}@postgres:5432/klikwise_prod
+      - REDIS_URL=redis://redis:6379
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - SCRAPER_SERVICE_URL=http://maps-scraper:8080
+      - CRAWL4AI_URL=http://crawl4ai:11235
+      - LISTMONK_API_URL=http://listmonk:9000
+      - CALCOM_API_URL=http://calcom:3000/api/v2
+      - CHATWOOT_API_URL=http://chatwoot:3000
+      - DOCUMENSO_API_URL=http://documenso:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - klikwise_mesh
+
+  # ---------------------------------------------------------------
+  # 1. Primary Unified Database (PostgreSQL 15 + pgvector)
+  # ---------------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: klikwise_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-klikwise_secure_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-klikwise_prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - klikwise_mesh
+
+  # ---------------------------------------------------------------
+  # 2. Redis Message Broker & Queue (BullMQ & Sidekiq)
+  # ---------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: klikwise_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - klikwise_mesh
+
+  # ---------------------------------------------------------------
+  # 3. Google Maps B2B Lead Scraper (gosom/google-maps-scraper)
+  # ---------------------------------------------------------------
+  maps-scraper:
+    image: gosom/google-maps-scraper:latest
+    container_name: klikwise_maps_scraper
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    volumes:
+      - scraper_data:/gmapsdata
+    networks:
+      - klikwise_mesh
+
+  # ---------------------------------------------------------------
+  # 4. Crawl4AI Web Intelligence & Extraction (unclecode/crawl4ai)
+  # ---------------------------------------------------------------
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    container_name: klikwise_crawl4ai
+    restart: unless-stopped
+    ports:
+      - "11235:11235"
+    shm_size: "2gb"
+    environment:
+      - CRAWL4AI_API_TOKEN=${CRAWL4AI_API_TOKEN:-}
+    networks:
+      - klikwise_mesh
+
+  # ---------------------------------------------------------------
+  # 5. Listmonk Outbound Email Engine (knadh/listmonk)
+  # ---------------------------------------------------------------
+  listmonk:
+    image: listmonk/listmonk:latest
+    container_name: klikwise_listmonk
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      - LISTMONK_db__host=postgres
+      - LISTMONK_db__port=5432
+      - LISTMONK_db__user=postgres
+      - LISTMONK_db__password=${POSTGRES_PASSWORD:-klikwise_secure_pass}
+      - LISTMONK_db__database=klikwise_prod
+      - LISTMONK_app__admin_username=${LISTMONK_ADMIN_USER:-admin}
+      - LISTMONK_app__admin_password=${LISTMONK_ADMIN_PASS:-adminpassword}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - listmonk_uploads:/listmonk/uploads
+    networks:
+      - klikwise_mesh
+
+  # ---------------------------------------------------------------
+  # 6. Cal.com Scheduling Platform (calcom/cal.diy)
+  # ---------------------------------------------------------------
+  calcom:
+    image: calcom/cal.diy:latest
+    container_name: klikwise_calcom
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-klikwise_secure_pass}@postgres:5432/klikwise_prod
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-super_secret_cal_key_12345}
+      - NEXT_PUBLIC_WEBAPP_URL=http://localhost:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - klikwise_mesh
+
+  # ---------------------------------------------------------------
+  # 7. Chatwoot Omnichannel Customer Support (chatwoot/chatwoot)
+  # ---------------------------------------------------------------
+  chatwoot:
+    image: chatwoot/chatwoot:latest
+    container_name: klikwise_chatwoot
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-klikwise_secure_pass}
+      - POSTGRES_DATABASE=klikwise_prod
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE:-chatwoot_production_secret_key_base_987654321}
+      - FRONTEND_URL=http://localhost:3002
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - klikwise_mesh
+
+  # ---------------------------------------------------------------
+  # 8. Documenso Digital Contracts & E-Signatures (documenso/documenso)
+  # ---------------------------------------------------------------
+  documenso:
+    image: documenso/documenso:latest
+    container_name: klikwise_documenso
+    restart: unless-stopped
+    ports:
+      - "3003:3000"
+    environment:
+      - NEXT_PRIVATE_DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-klikwise_secure_pass}@postgres:5432/klikwise_prod
+      - NEXTAUTH_SECRET=${DOCUMENSO_AUTH_SECRET:-documenso_secret_key_12345}
+      - NEXT_PUBLIC_WEBAPP_URL=http://localhost:3003
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - klikwise_mesh
+
+volumes:
+  postgres_data:
+  redis_data:
+  scraper_data:
+  listmonk_uploads:
+
+networks:
+  klikwise_mesh:
+    driver: bridge
+

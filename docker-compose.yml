@@ -1,0 +1,77 @@
+version: '3.8'
+
+# =================================================================
+# Open-Source Self-Hosted Business & Sales Automation Stack
+# Connects:
+# 1. google-maps-scraper (Lead Generation)
+# 2. Listmonk (Email Campaigns & Outreach)
+# 3. PostgreSQL (Database for Listmonk & Services)
+# 4. Redis (Cache & Queue Worker)
+# =================================================================
+
+services:
+  # --- Core Database ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: biz_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-adminpassword}
+      POSTGRES_DB: ${POSTGRES_DB:-bizstack}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - biznet
+
+  # --- Redis Queue & Cache ---
+  redis:
+    image: redis:7-alpine
+    container_name: biz_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - biznet
+
+  # --- Lead Scraping Engine (Google Maps Scraper) ---
+  maps-scraper:
+    image: gosom/google-maps-scraper:latest
+    container_name: biz_maps_scraper
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    networks:
+      - biznet
+
+  # --- Email Marketing & Outbound Engine (Listmonk) ---
+  listmonk:
+    image: listmonk/listmonk:latest
+    container_name: biz_listmonk
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      - LISTMONK_db__host=postgres
+      - LISTMONK_db__port=5432
+      - LISTMONK_db__user=admin
+      - LISTMONK_db__password=adminpassword
+      - LISTMONK_db__database=bizstack
+      - LISTMONK_app__admin_username=admin
+      - LISTMONK_app__admin_password=admin
+    depends_on:
+      - postgres
+    networks:
+      - biznet
+
+volumes:
+  postgres_data:
+
+networks:
+  biznet:
+    driver: bridge
+

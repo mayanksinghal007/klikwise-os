@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KLIKWise OS — Agency Growth & Autonomous Sales Command Center</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Collapsible Sidebar with 17 Master Modules -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-badge">KW</div>
+        <div class="logo-text">
+          <h1>KLIKWise OS</h1>
+          <span>Growth Command Center</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Operations & Growth</div>
+        <a class="nav-item active" data-module="overview_dashboard">📊 1. Overview Dashboard</a>
+        <a class="nav-item" data-module="command_center" style="color:var(--accent-cyan); font-weight:700;">⚡ 2. AI Command Center</a>
+        <a class="nav-item" data-module="lead_discovery">📍 3. Lead Discovery</a>
+        <a class="nav-item" data-module="lead_database">🗄️ 4. Lead Database</a>
+        <a class="nav-item" data-module="ai_outreach">✉️ 5. AI Outreach</a>
+        <a class="nav-item" data-module="whatsapp_manager">💬 6. WhatsApp Manager</a>
+        <a class="nav-item" data-module="email_campaigns">📧 7. Email Campaigns</a>
+
+        <div class="nav-section-title">Sales & Deal Closing</div>
+        <a class="nav-item" data-module="ai_sales_agent">🤖 8. AI Sales Agent</a>
+        <a class="nav-item" data-module="conversations_inbox">📥 9. Conversations Inbox</a>
+        <a class="nav-item" data-module="crm_pipeline">📈 10. CRM Pipeline</a>
+        <a class="nav-item" data-module="proposals">📝 11. Proposals & Quotations</a>
+        <a class="nav-item" data-module="pricing_services">🏷️ 12. Pricing & Services</a>
+        <a class="nav-item" data-module="followup_manager">⏱️ 13. Follow-up Manager</a>
+
+        <div class="nav-section-title">Workforce & Governance</div>
+        <a class="nav-item" data-module="ai_agents">👥 14. AI Agents (12 Specialists)</a>
+        <a class="nav-item" data-module="analytics_reports">📊 15. Analytics & Reports</a>
+        <a class="nav-item" data-module="integrations">🔌 16. Integrations</a>
+        <a class="nav-item" data-module="settings">⚙️ 17. Settings & Mode</a>
+      </nav>
+
+      <!-- Founder Quick Identity Footer -->
+      <div style="padding:14px 18px; border-top:1px solid var(--border-color); font-size:11px; color:var(--text-faint);">
+        <div>👑 <strong style="color:var(--text-main);">Mayank Aggarwal</strong></div>
+        <div style="color:var(--accent-cyan);">Co-Founder & AI Creative Head</div>
+        <div style="margin-top:4px;">📞 +91 9217756033</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
+      <!-- Top Navigation Bar with Operating Mode Selector -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="breadcrumbs">
+            <span>KLIKWise OS</span>
+            <span>/</span>
+            <span class="current" id="breadcrumb-current">Overview Dashboard</span>
+          </div>
+          <div class="search-bar">
+            <span>🔍</span>
+            <input type="text" id="global-search" placeholder="Type command or search leads... (⌘K)">
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Mode Selector Pill -->
+          <div style="display:flex; align-items:center; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:6px; padding:4px 8px; font-size:12px;">
+            <span style="color:var(--text-faint); margin-right:6px;">Mode:</span>
+            <select id="mode-select" style="background:transparent; border:none; color:var(--accent-cyan); font-weight:600; outline:none; cursor:pointer;" onchange="changeOperatingMode(this.value)">
+              <option value="APPROVAL_MODE" style="background:#0D131F;">Approval Mode (Default)</option>
+              <option value="RESEARCH_MODE" style="background:#0D131F;">Research Mode (No Send)</option>
+              <option value="CONTROLLED_AUTOMATION" style="background:#0D131F;">Controlled Automation</option>
+            </select>
+          </div>
+
+          <button class="secondary-btn" style="border-color:var(--accent-red); color:var(--accent-red);" onclick="emergencyPause()">⏸️ Pause All Agents</button>
+          <button class="action-btn" onclick="navigateToModule('command_center')">⚡ Open Command Center</button>
+        </div>
+      </header>
+
+      <!-- Dynamic Page Container -->
+      <section class="page-container" id="page-content">
+        <!-- Injected dynamically by app.js -->
+      </section>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

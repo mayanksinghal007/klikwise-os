@@ -1,0 +1,319 @@
+// KLIKWise OS — Unified Master Database Schema
+// Database Engine: PostgreSQL 15+ (Compatible with Supabase, Neon & Local Docker)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------------------------------------------
+// Multi-Tenancy, Users & Access Control
+// -------------------------------------------------------------
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MANAGER
+  SALES
+  MARKETING
+  RESEARCH
+  CLIENT
+  VIEWER
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  logoUrl     String?
+  industry    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       Membership[]
+  leads       Lead[]
+  deals       Deal[]
+  campaigns   EmailCampaign[]
+  workflows   Workflow[]
+  agents      Agent[]
+  auditLogs   AuditLog[]
+  settings    BusinessSettings?
+  documents   KnowledgeDocument[]
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  name          String
+  passwordHash  String
+  avatarUrl     String?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  memberships   Membership[]
+  auditLogs     AuditLog[]
+  assignedTasks Task[]
+}
+
+model Membership {
+  id             String       @id @default(uuid())
+  userId         String
+  organizationId String
+  role           UserRole     @default(MANAGER)
+  createdAt      DateTime     @default(now())
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+}
+
+// -------------------------------------------------------------
+// Lead Discovery & Intelligence (Google Maps & Crawl4AI)
+// -------------------------------------------------------------
+
+enum LeadStatus {
+  NEW
+  DISCOVERED
+  RESEARCHED
+  QUALIFIED
+  OUTREACH_PENDING
+  CONTACTED
+  FOLLOW_UP
+  INTERESTED
+  MEETING_SCHEDULED
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  LOST
+}
+
+model Lead {
+  id             String       @id @default(uuid())
+  organizationId String
+  businessName   String
+  category       String?
+  website        String?
+  phone          String?
+  address        String?
+  city           String?
+  state          String?
+  country        String?
+  rating         Float?
+  reviewsCount   Int?         @default(0)
+  googleMapsUrl  String?
+  leadScore      Int          @default(50) // 0 to 100 explainable score
+  scoreReasons   Json?        // Array of explanation points
+  status         LeadStatus   @default(NEW)
+  source         String       @default("GOOGLE_MAPS")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contacts       Contact[]
+  enrichment     LeadEnrichment?
+  websiteAudit   WebsiteAudit?
+  deal           Deal?
+}
+
+model Contact {
+  id          String   @id @default(uuid())
+  leadId      String
+  firstName   String
+  lastName    String?
+  email       String?
+  phone       String?
+  jobTitle    String?
+  linkedinUrl String?
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model LeadEnrichment {
+  id             String   @id @default(uuid())
+  leadId         String   @unique
+  discoveredEmails Json?  // String array
+  discoveredPhones Json?  // String array
+  socialProfiles   Json?  // { linkedin, twitter, facebook, instagram }
+  technologies     Json?  // Detected CMS, analytics, frameworks
+  summaryMarkdown  String?
+  createdAt        DateTime @default(now())
+
+  lead           Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model WebsiteAudit {
+  id             String   @id @default(uuid())
+  leadId         String   @unique
+  overallScore   Int      @default(0)
+  performance    Int      @default(0)
+  seoScore       Int      @default(0)
+  mobileScore    Int      @default(0)
+  issues         Json?    // Array of { severity, message, fix }
+  opportunities  Json?    // Marketing growth opportunities
+  auditedAt      DateTime @default(now())
+
+  lead           Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+// -------------------------------------------------------------
+// CRM & Sales Pipelines (Twenty CRM Synced)
+// -------------------------------------------------------------
+
+model Deal {
+  id             String       @id @default(uuid())
+  organizationId String
+  leadId         String       @unique
+  title          String
+  amount         Decimal      @default(0.0)
+  currency       String       @default("USD")
+  stage          LeadStatus   @default(PROPOSAL_SENT)
+  expectedClose  DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lead           Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  proposals      Proposal[]
+}
+
+model Proposal {
+  id             String       @id @default(uuid())
+  dealId         String
+  title          String
+  servicePackage String
+  amount         Decimal
+  status         String       @default("DRAFT") // DRAFT, SENT, SIGNED, REJECTED
+  documensoId    String?      // Reference to Documenso Envelope
+  signingUrl     String?
+  createdAt      DateTime     @default(now())
+
+  deal           Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+}
+
+// -------------------------------------------------------------
+// Email Outreach & Sequences (Listmonk Synced)
+// -------------------------------------------------------------
+
+model EmailCampaign {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  subject        String
+  bodyTemplate   String
+  targetNiche    String?
+  sentCount      Int          @default(0)
+  repliedCount   Int          @default(0)
+  listmonkListId Int?
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// -------------------------------------------------------------
+// Multi-Agent System & Automation
+// -------------------------------------------------------------
+
+model Agent {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  roleIdentifier String       @unique // e.g. "CEO_EXECUTIVE", "RESEARCH_AGENT"
+  description    String
+  model          String       @default("gemini-2.5-flash")
+  systemPrompt   String
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  executions     AgentExecution[]
+}
+
+model AgentExecution {
+  id          String   @id @default(uuid())
+  agentId     String
+  inputPrompt String
+  outputData  Json?
+  tokensUsed  Int      @default(0)
+  durationMs  Int      @default(0)
+  status      String   @default("SUCCESS") // SUCCESS, FAILED, REQUIRE_APPROVAL
+  createdAt   DateTime @default(now())
+
+  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+}
+
+model Workflow {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  triggerType    String       // MANUAL, NEW_LEAD, EMAIL_REPLY, CRON
+  nodesJson      Json         // Visual node structure
+  isPublished    Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// -------------------------------------------------------------
+// Knowledge Base & RAG Memory
+// -------------------------------------------------------------
+
+model KnowledgeDocument {
+  id             String       @id @default(uuid())
+  organizationId String
+  title          String
+  category       String       // BRAND, PRICING, FAQ, PLAYBOOK
+  content        String
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// -------------------------------------------------------------
+// Governance, Tasks & Audit Logging
+// -------------------------------------------------------------
+
+model Task {
+  id          String   @id @default(uuid())
+  assignedTo  String?
+  title       String
+  description String?
+  dueDate     DateTime?
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [assignedTo], references: [id], onDelete: SetNull)
+}
+
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String?
+  action         String       // e.g. "LEAD_SCRAPED", "OUTREACH_APPROVED", "PROPOSAL_CREATED"
+  targetResource String
+  details        Json?
+  ipAddress      String?
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model BusinessSettings {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  profileJson    Json         // Target audience, brand tone, offerings, booking links
+  apiKeysJson    Json?        // Encrypted external API keys
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+

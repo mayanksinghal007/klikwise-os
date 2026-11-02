@@ -1,0 +1,197 @@
+{
+  "business": {
+    "name": "KLIKWise",
+    "tagline": "The Business Growth Command Center",
+    "category": "Digital Marketing, Performance Marketing, AI-Powered Creative Production & Marketing Automation",
+    "industry": "Performance Marketing & AI Creative Agency",
+    "website": "https://drive.google.com/drive/folders/1IBXhPfcEE4f9UksKn1_1REIqyGCT4wqK",
+    "contact_name": "Mayank Aggarwal",
+    "founder_title": "Co-Founder & AI Creative Head",
+    "contact_email": "riyansh.studio007@gmail.com",
+    "phone": "+91 9217756033",
+    "location": "Delhi NCR, India (Remote Pan-India & Global)",
+    "linkedin": "https://www.linkedin.com/in/mayank-aggarwal",
+    "instagram": "@mayankaggarwal_7",
+    "portfolio": "https://drive.google.com/drive/folders/1IBXhPfcEE4f9UksKn1_1REIqyGCT4wqK"
+  },
+  "engagement_models": {
+    "remote": "Progress and performance reporting twice a week",
+    "freelance": "Progress reporting once a week",
+    "contract": "Updates and reports every 4-5 days",
+    "retainer": "Monthly retainer with bi-weekly KPI reviews"
+  },
+  "industries_served": [
+    "Real Estate",
+    "Fashion",
+    "Technology",
+    "AI and Technology Startups",
+    "Education",
+    "Travel",
+    "Events and Event Commerce",
+    "Retail",
+    "E-commerce",
+    "Local Businesses",
+    "B2B Businesses",
+    "Professional Services"
+  ],
+  "tool_inventory": {
+    "ads_and_analytics": ["Meta Ads Manager", "Meta Pixel", "Google Ads", "Google Analytics 4 (GA4)", "SEMrush"],
+    "automation_and_marketing": ["Interakt", "WhatsApp Automation", "Mailchimp", "Buffer", "WordPress"],
+    "ai_video_and_voice": ["Google Flow", "Higgsfield", "HeyGen", "Runway", "Kling AI", "ElevenLabs"],
+    "ai_and_design": ["ChatGPT", "Meta AI", "Midjourney", "Canva AI", "Canva"]
+  },
+  "offerings": [
+    {
+      "id": "starter_digital_presence",
+      "name": "Starter Digital Presence Package",
+      "category": "Social Media Management",
+      "description": "Essential organic brand visibility and social media consistency for local businesses, doctors, and boutiques.",
+      "deliverables": [
+        "12 Static / Carousel Posts per month",
+        "Up to 4 Short-Form Reels",
+        "Monthly Content Calendar",
+        "Captions, Copywriting & Hashtags",
+        "Post Scheduling & Community Engagement",
+        "Monthly Growth Report"
+      ],
+      "pricing": {
+        "model": "Monthly Retainer",
+        "currency": "INR",
+        "amount": "₹15,000 - ₹18,000/month",
+        "min_term": "1 Month"
+      }
+    },
+    {
+      "id": "social_growth",
+      "name": "Social Growth Package",
+      "category": "Social Media Marketing",
+      "description": "Strategy-driven marketing approach designed to build brand authority, community engagement, and inbound enquiries.",
+      "deliverables": [
+        "Social Media Management + Full Marketing Strategy",
+        "Audience & Competitor Research",
+        "4 Content Pillars & Organic Conversion Funnel",
+        "Reel Marketing Strategy & Viral Hooks",
+        "Trend Research & Influencer Outlines",
+        "Bi-Weekly Growth Reporting"
+      ],
+      "pricing": {
+        "model": "Monthly Retainer",
+        "currency": "INR",
+        "amount": "₹20,000 - ₹25,000/month",
+        "min_term": "3 Months"
+      }
+    },
+    {
+      "id": "performance_growth",
+      "name": "Performance Growth Package",
+      "category": "Performance Marketing",
+      "description": "High-ROI paid advertising across Meta and Google to drive qualified leads, appointments, and e-commerce sales.",
+      "deliverables": [
+        "Meta Ads Management (Facebook & Instagram)",
+        "Google Ads Management (Search & Performance Max)",
+        "Conversion Tracking Synchronization (Meta Pixel + GA4)",
+        "A/B Creative & Copy Testing",
+        "Retargeting Funnels & Custom Audiences",
+        "CAC, CPL & ROAS Optimization",
+        "Bi-Weekly Performance Briefings (Twice a week)"
+      ],
+      "pricing": {
+        "model": "Monthly Retainer",
+        "currency": "INR",
+        "amount": "₹25,000 - ₹30,000/month",
+        "ad_spend_policy": "Paid directly by client to ad platforms"
+      }
+    },
+    {
+      "id": "ai_creative_growth",
+      "name": "AI Creative Growth Package",
+      "category": "AI Filmmaking & Video Production",
+      "description": "Cutting-edge AI-assisted video production, authentic UGC ad creatives, and high-impact visual storytelling.",
+      "deliverables": [
+        "8 AI Brand Reels & Short-Form Ads",
+        "4 Authentic UGC-Style Video Creatives",
+        "ElevenLabs Studio Voiceovers & Sound Design",
+        "Cinematic AI Visuals (Runway, Kling, HeyGen)",
+        "Founder / 3D Model Presentations",
+        "Ad-Oriented Storytelling & Fast-Turnaround Iterations"
+      ],
+      "pricing": {
+        "model": "Monthly Retainer",
+        "currency": "INR",
+        "amount": "₹20,000 - ₹30,000/month"
+      }
+    },
+    {
+      "id": "complete_business_growth",
+      "name": "Complete Business Growth OS",
+      "category": "Full-Service Omnichannel Retainer",
+      "description": "Complete growth command center: Multi-platform paid media, strategic organic social, AI creative production, and WhatsApp automation.",
+      "deliverables": [
+        "Omnichannel Paid Ads (Meta + Google + YouTube + WhatsApp)",
+        "Full Social Media Strategy & Publishing",
+        "Full AI Creative Video & Ad Production Suite",
+        "WhatsApp Automation (Interakt Funnels)",
+        "Conversion Tracking & Weekly Executive Briefings"
+      ],
+      "pricing": {
+        "model": "Monthly Retainer",
+        "currency": "INR",
+        "amount": "₹35,000 - ₹40,000/month"
+      }
+    },
+    {
+      "id": "website_development",
+      "name": "Corporate & Landing Page Web Development",
+      "category": "Web Design & Development",
+      "description": "Ultra-fast, mobile-responsive, conversion-optimized landing pages and business websites (Note: SEO retainers excluded).",
+      "deliverables": [
+        "Single Sales Landing Page: ₹5,000 - ₹8,000",
+        "5-Page Corporate Website: ₹12,000 - ₹18,000",
+        "10-Page Business Website: ₹20,000 - ₹28,000",
+        "Starter E-commerce (25 products): ₹25,000 - ₹35,000",
+        "Growth E-commerce (100 products): ₹40,000 - ₹55,000",
+        "Payment Gateway & WhatsApp Chat Integration"
+      ],
+      "pricing": {
+        "model": "Fixed Project",
+        "currency": "INR",
+        "amount": "₹5,000 - ₹55,000"
+      }
+    }
+  ],
+  "target_audience": {
+    "ideal_customer_profile": "Business owners, founders, and marketing leaders in Real Estate, E-Commerce, Fashion, Education, and Tech Startups in Delhi NCR, India, and global remote markets looking for scalable customer acquisition and high-impact AI creative production.",
+    "target_roles": [
+      "Founder",
+      "CEO",
+      "Managing Director",
+      "Chief Marketing Officer (CMO)",
+      "Real Estate Developer",
+      "Brand Head"
+    ],
+    "pain_points": [
+      "High ad spend with declining ROAS and low lead quality",
+      "High creative production costs and slow turnaround for video ads",
+      "Inconsistent social media presence without clear conversion strategy",
+      "Lack of automated WhatsApp lead follow-ups and lost prospects",
+      "Agencies that overpromise vanity metrics and underdeliver on revenue"
+    ],
+    "value_propositions": [
+      "10-20% below comparable Indian agency retainers with direct founder-led execution by Mayank Aggarwal",
+      "Performance-first focus: unit economics tracking (CAC, CPL, ROAS) rather than vanity views",
+      "Pioneering AI filmmaking: 3D character presentations, synthetic models, and authentic UGC at a fraction of traditional shoot costs",
+      "Rapid bi-weekly reporting cadence with complete transparency (ad accounts client-owned)"
+    ]
+  },
+  "outreach_strategy": {
+    "tone": "Consultative, direct, performance-focused, transparent, professional",
+    "call_to_action": "15-minute introductory growth strategy call with Mayank Aggarwal",
+    "booking_link": "https://cal.com/klikwise/15min",
+    "whatsapp_cta": "https://wa.me/919217756033"
+  },
+  "templates": {
+    "cold_email_subject": "Quick performance question regarding customer acquisition for {{company_name}}",
+    "cold_email_body": "Hi {{first_name}},\n\nI was reviewing {{company_name}}'s recent presence in the {{industry}} space and noticed your strong positioning.\n\nAt KLIKWise, we specialize in helping businesses in your sector improve customer acquisition efficiency through targeted Meta & Google Ads, high-converting AI video creatives, and automated WhatsApp follow-ups.\n\nWe recently helped similar brands significantly reduce their cost per lead while scaling qualified appointments without traditional shoot overheads.\n\nWould you be open to a brief 10-minute strategy chat this week to review how we can support {{company_name}}'s growth?\n\nYou can pick a quick slot directly on my calendar here: {{booking_link}}\n\nWarm regards,\nMayank Aggarwal\nCo-Founder & AI Creative Head | KLIKWise\nPhone: +91 9217756033\nPortfolio: https://drive.google.com/drive/folders/1IBXhPfcEE4f9UksKn1_1REIqyGCT4wqK",
+    "followup_1": "Hi {{first_name}},\n\nFollowing up on my note regarding {{company_name}}.\n\nEven if you're not planning to revamp your marketing right now, I'd be glad to share a quick 3-point creative & ad angle breakdown on how top players in {{industry}} are acquiring leads across Delhi NCR.\n\nLet me know if you'd like me to send that over via WhatsApp or email!\n\nBest regards,\nMayank Aggarwal | KLIKWise\n+91 9217756033"
+  }
+}

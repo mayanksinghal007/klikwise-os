@@ -1,0 +1,45 @@
+name: KLIKWise OS CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-verify:
+    name: Run Automated QA & Integration Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Verify Project Architecture & Linting
+        run: |
+          node -c src/server.js
+          node -c src/cli.js
+          node -c src/agent/engine.js
+          node -c src/agent/multiAgentCenter.js
+          node -c src/lib/toolSdk.js
+          node -c src/lib/security.js
+          node -c src/workflows/workflowEngine.js
+
+      - name: Execute Systems Verification Test Suite
+        run: npm test
+
+      - name: Check Environment Schema Consistency
+        run: |
+          test -f .env.example
+          test -f prisma/schema.prisma
+          test -f docker-compose.yml
+

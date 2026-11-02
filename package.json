@@ -1,0 +1,23 @@
+{
+  "name": "klikwise-os",
+  "version": "1.0.0",
+  "description": "Enterprise-Grade AI Business Operating System & Growth Command Center",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node tests/systemTest.js",
+    "cli": "node src/cli.js",
+    "pipeline": "node src/cli.js pipeline"
+  },
+  "keywords": [
+    "ai-agent",
+    "crm",
+    "lead-generation",
+    "business-operating-system",
+    "growth-os",
+    "multi-agent",
+    "sales-automation"
+  ],
+  "author": "KLIKWise",
+  "license": "MIT"
+}
