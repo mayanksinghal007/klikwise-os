@@ -1,10 +1,10 @@
 /**
- * KLIKWise OS v2.0 — Core Client Application & 17-Module Router
- * Built for Mayank Aggarwal (Founder, KLIKWise)
+ * KLIKWise OS v2.0 — Executive Client Application & Workspace Engine
+ * Built for Mayank Aggarwal (Co-Founder & AI Creative Head, KLIKWise)
  */
 
 const state = {
-  activeModule: 'command_center',
+  activeTab: 'command_center',
   operatingMode: 'APPROVAL_MODE',
   profile: null,
   tools: [],
@@ -13,40 +13,43 @@ const state = {
   auditLogs: [],
   leads: [],
   activeCampaign: null,
-  chatHistory: []
+  chatHistory: [
+    {
+      sender: 'agent',
+      text: "Hello! I am Mayank Aggarwal's Autonomous AI Sales Agent for KLIKWise. I represent our Performance Marketing, AI Filmmaking, and Growth operations. How can I assist you with your business goals today?"
+    }
+  ],
+  generatedProposal: null
 };
 
+// --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
-  initNavigation();
   await refreshData();
-  renderActiveModule();
+  renderActiveTab();
 });
 
-function initNavigation() {
-  const navItems = document.querySelectorAll('.nav-item');
-  navItems.forEach(item => {
-    item.addEventListener('click', () => {
-      navItems.forEach(i => i.classList.remove('active'));
-      item.classList.add('active');
-      const moduleKey = item.getAttribute('data-module');
-      state.activeModule = moduleKey;
-      document.getElementById('breadcrumb-current').innerText = item.innerText.replace(/^[^\w]+/, '');
-      renderActiveModule();
-    });
+// --- Tab Switching ---
+function switchTab(tabId) {
+  state.activeTab = tabId;
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
   });
+
+  const titles = {
+    command_center: '⚡ AI Command Center',
+    ai_sales: '💬 AI Sales Agent & WhatsApp',
+    crm_pipeline: '🎯 Leads & CRM Pipeline',
+    proposals_pricing: '📝 Proposals & Master Pricing',
+    agents_system: '⚙️ AI Workforce & Governance'
+  };
+
+  const titleEl = document.getElementById('current-tab-title');
+  if (titleEl) titleEl.innerText = titles[tabId] || 'KLIKWise OS';
+
+  renderActiveTab();
 }
 
-function navigateToModule(moduleKey) {
-  state.activeModule = moduleKey;
-  const navItem = document.querySelector(`.nav-item[data-module="${moduleKey}"]`);
-  if (navItem) {
-    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    navItem.classList.add('active');
-    document.getElementById('breadcrumb-current').innerText = navItem.innerText.replace(/^[^\w]+/, '');
-  }
-  renderActiveModule();
-}
-
+// --- Fetch System Status ---
 async function refreshData() {
   try {
     const res = await fetch('/api/status');
@@ -61,11 +64,13 @@ async function refreshData() {
 
     const modeSel = document.getElementById('mode-select');
     if (modeSel) modeSel.value = state.operatingMode;
+    updateModeDescription(state.operatingMode);
   } catch (err) {
     console.error('Failed to load status:', err);
   }
 }
 
+// --- Operating Mode Switcher ---
 async function changeOperatingMode(mode) {
   try {
     const res = await fetch('/api/settings/mode', {
@@ -76,138 +81,188 @@ async function changeOperatingMode(mode) {
     const data = await res.json();
     if (data.success) {
       state.operatingMode = mode;
-      alert(`Operating Mode updated to: ${mode === 'APPROVAL_MODE' ? 'Approval Mode (Human review required before sending)' : mode}`);
+      updateModeDescription(mode);
+      alert(`Operating Mode changed to: ${mode.replace('_', ' ')}`);
     }
   } catch (err) {
     alert('Failed to update mode');
   }
 }
 
-function emergencyPause() {
-  alert('⏸️ EMERGENCY SWITCH ACTIVATED:\nAll outbound agent tasks, email dispatches, and WhatsApp queues have been temporarily paused.');
+function updateModeDescription(mode) {
+  const descEl = document.getElementById('mode-desc');
+  if (!descEl) return;
+  if (mode === 'APPROVAL_MODE') {
+    descEl.innerText = '🛡️ Human review required before sending any outreach.';
+  } else if (mode === 'RESEARCH_MODE') {
+    descEl.innerText = '🔍 Read-only discovery. Outbound communication locked.';
+  } else {
+    descEl.innerText = '⚡ High-confidence leads auto-dispatched within rate limits.';
+  }
 }
 
-function renderActiveModule() {
+function emergencyPause() {
+  alert('⏸️ EMERGENCY SWITCH TRIGGERED:\nAll outbound agent queues, email dispatches, and WhatsApp broadcasts have been immediately halted.');
+}
+
+// --- Dynamic Workspace Router ---
+function renderActiveTab() {
   const container = document.getElementById('page-content');
   if (!container) return;
 
-  switch (state.activeModule) {
-    case 'overview_dashboard':
-      renderOverviewDashboard(container);
-      break;
+  switch (state.activeTab) {
     case 'command_center':
       renderCommandCenter(container);
       break;
-    case 'lead_discovery':
-      renderLeadDiscovery(container);
-      break;
-    case 'lead_database':
-      renderLeadDatabase(container);
-      break;
-    case 'ai_outreach':
-      renderAiOutreach(container);
-      break;
-    case 'whatsapp_manager':
-      renderWhatsAppManager(container);
-      break;
-    case 'email_campaigns':
-      renderEmailCampaigns(container);
-      break;
-    case 'ai_sales_agent':
-      renderAiSalesAgent(container);
-      break;
-    case 'conversations_inbox':
-      renderConversationsInbox(container);
+    case 'ai_sales':
+      renderAiSales(container);
       break;
     case 'crm_pipeline':
       renderCrmPipeline(container);
       break;
-    case 'proposals':
-      renderProposals(container);
+    case 'proposals_pricing':
+      renderProposalsPricing(container);
       break;
-    case 'pricing_services':
-      renderPricingServices(container);
-      break;
-    case 'followup_manager':
-      renderFollowupManager(container);
-      break;
-    case 'ai_agents':
-      renderAiAgents(container);
-      break;
-    case 'analytics_reports':
-      renderAnalyticsReports(container);
-      break;
-    case 'integrations':
-      renderIntegrations(container);
-      break;
-    case 'settings':
-      renderSettings(container);
+    case 'agents_system':
+      renderAgentsSystem(container);
       break;
     default:
-      renderOverviewDashboard(container);
+      renderCommandCenter(container);
   }
 }
 
-// -------------------------------------------------------------
-// MODULE 2: AI COMMAND CENTER (SIGNATURE WORKFLOW)
-// -------------------------------------------------------------
+// ==========================================================================
+// TAB 1: AI COMMAND CENTER (HERO ENGINE)
+// ==========================================================================
 function renderCommandCenter(el) {
   el.innerHTML = `
-    <div class="card" style="border-top:3px solid var(--accent-cyan);">
-      <div class="card-title">
-        <span>⚡ AI Command Center — Natural Language Agency Orchestrator</span>
-        <span class="badge badge-cyan">${state.operatingMode.replace('_', ' ')} ACTIVE</span>
-      </div>
-      <p style="color:var(--text-muted); font-size:13px; margin-bottom:14px;">
-        Type an instruction in plain English. KLIKWise AI will formulate a search plan, discover businesses on Google Maps, enrich contacts, score leads, draft personalized pitches, and stage them for your approval.
-      </p>
-
-      <!-- Pre-set Prompt Suggestion Pills -->
-      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
-        <button class="secondary-btn" style="font-size:11px;" onclick="setCommandPrompt('Find 10 D2C women\'s fashion brands in Delhi.')">👗 10 D2C Fashion Brands in Delhi</button>
-        <button class="secondary-btn" style="font-size:11px;" onclick="setCommandPrompt('Find 15 real estate businesses in Gurgaon that may need Meta Ads and lead generation.')">🏢 15 Real Estate in Gurgaon</button>
-        <button class="secondary-btn" style="font-size:11px;" onclick="setCommandPrompt('Find 20 women\'s clothing stores in Delhi NCR that could need social media management.')">🛍️ 20 Clothing Stores in Delhi NCR</button>
-        <button class="secondary-btn" style="font-size:11px;" onclick="setCommandPrompt('Find 10 restaurants in Rohini that need digital marketing services.')">🍽️ 10 Restaurants in Rohini</button>
+    <div class="glass-card card-hero">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+        <div>
+          <h1 class="hero-title">The Business Growth Command Center</h1>
+          <p class="hero-subtitle">
+            Welcome back, <strong>Mayank Aggarwal</strong>. Type your business objective in plain English below.
+            KLIKWise AI coordinates Google Maps scraping, web enrichment, prospect qualification, and multi-channel outreach.
+          </p>
+        </div>
+        <span class="system-status-pill" style="border-color:var(--cyan); color:var(--cyan);">
+          Mode: ${state.operatingMode.replace('_', ' ')}
+        </span>
       </div>
 
-      <!-- Command Input Box -->
-      <div style="display:flex; gap:12px; margin-bottom:20px;">
-        <input type="text" id="cc-command-input" class="search-bar" style="flex:1; width:auto; font-size:14px; padding:12px 16px;" placeholder="e.g. Find 10 D2C women's fashion brands in Delhi." value="Find 10 D2C women's fashion brands in Delhi." onkeydown="if(event.key==='Enter') executeCommandCenterWorkflow()">
-        <button class="action-btn" style="padding:0 24px; font-size:14px;" id="btn-cc-exec" onclick="executeCommandCenterWorkflow()">Execute Command ⚡</button>
+      <!-- 3-Step Clear Workflow Banner -->
+      <div class="process-banner">
+        <div class="process-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Enter Instruction</h4>
+            <p>Define niche & target location</p>
+          </div>
+        </div>
+        <div class="process-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>AI Discovers & Qualifies</h4>
+            <p>Scrapes Maps & scores intent</p>
+          </div>
+        </div>
+        <div class="process-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Review & 1-Click Launch</h4>
+            <p>Approve personalized pitches</p>
+          </div>
+        </div>
       </div>
 
-      <!-- Execution Progress Stepper (Hidden by default) -->
-      <div id="cc-stepper-box" style="display:none; background:#070B12; border:1px solid var(--border-color); border-radius:8px; padding:16px; margin-bottom:20px;">
-        <h4 style="font-size:13px; color:#fff; margin-bottom:12px;">Workflow Execution Status:</h4>
-        <div id="cc-stepper-steps" style="display:flex; flex-direction:column; gap:8px; font-size:12px;"></div>
+      <!-- Command Console Box -->
+      <div class="console-box">
+        <span style="display:flex; align-items:center; padding-left:14px; font-size:18px;">⚡</span>
+        <input 
+          type="text" 
+          id="cc-command-input" 
+          class="console-input" 
+          placeholder="e.g. Find 10 D2C women's fashion brands in Delhi." 
+          value="Find 10 D2C women's fashion brands in Delhi."
+          onkeydown="if(event.key==='Enter') executeCommandCenterWorkflow()"
+        >
+        <button class="btn-execute" id="btn-cc-exec" onclick="executeCommandCenterWorkflow()">
+          <span>Launch AI Workflow</span>
+          <span>➔</span>
+        </button>
       </div>
 
-      <!-- Review & Approval Campaign Area -->
-      <div id="cc-campaign-review-area"></div>
+      <!-- Quick-Launch Chips -->
+      <div class="chips-row">
+        <span class="chips-label">Quick Presets:</span>
+        <button class="chip-btn" onclick="setCommandPrompt('Find 10 D2C women\'s fashion brands in Delhi.')">👗 10 D2C Fashion Brands in Delhi</button>
+        <button class="chip-btn" onclick="setCommandPrompt('Find 15 real estate developers in Gurgaon that need Meta Ads.')">🏢 15 Real Estate in Gurgaon</button>
+        <button class="chip-btn" onclick="setCommandPrompt('Find 12 luxury boutiques in South Delhi that need AI video ads.')">🛍️ 12 Luxury Boutiques in South Delhi</button>
+        <button class="chip-btn" onclick="setCommandPrompt('Find 10 cafes and restaurants in Rohini needing social media growth.')">🍽️ 10 Restaurants in Rohini</button>
+      </div>
+
+      <!-- Live Execution Stepper (Hidden until run) -->
+      <div id="cc-stepper-box" style="display:none;" class="stepper-container">
+        <div class="stepper-header">
+          <h4>AI ORCHESTRATION PIPELINE PROGRESS</h4>
+          <span id="cc-stepper-status" style="color:var(--cyan); font-family:var(--font-mono); font-size:11px;">EXECUTING...</span>
+        </div>
+        <div id="cc-stepper-grid" class="stepper-grid"></div>
+      </div>
+
+      <!-- Results Area -->
+      <div id="cc-results-area">
+        ${renderSampleOrStagedLeads()}
+      </div>
     </div>
   `;
 }
 
 function setCommandPrompt(text) {
   const input = document.getElementById('cc-command-input');
-  if (input) input.value = text;
+  if (input) {
+    input.value = text;
+    input.focus();
+  }
+}
+
+function runQuickDemo() {
+  switchTab('command_center');
+  setCommandPrompt("Find 10 D2C women's fashion brands in Delhi.");
+  setTimeout(() => {
+    executeCommandCenterWorkflow();
+  }, 300);
 }
 
 async function executeCommandCenterWorkflow() {
   const input = document.getElementById('cc-command-input');
   const btn = document.getElementById('btn-cc-exec');
   const stepperBox = document.getElementById('cc-stepper-box');
-  const stepperSteps = document.getElementById('cc-stepper-steps');
-  const reviewArea = document.getElementById('cc-campaign-review-area');
+  const stepperGrid = document.getElementById('cc-stepper-grid');
+  const resultsArea = document.getElementById('cc-results-area');
 
-  const promptText = input.value.trim();
+  const promptText = input ? input.value.trim() : '';
   if (!promptText) return;
 
   btn.disabled = true;
-  btn.innerText = 'Orchestrating...';
+  btn.innerHTML = `<span>Orchestrating...</span> <span class="pulse-dot"></span>`;
   stepperBox.style.display = 'block';
-  stepperSteps.innerHTML = '<div>⏳ Initializing KLIKWise AI orchestrator and specialist agents...</div>';
-  reviewArea.innerHTML = '';
+
+  // Render initial animated steps
+  const steps = [
+    { title: '1. Maps Scraper', desc: 'Querying Google Maps API for local businesses...' },
+    { title: '2. Crawl4AI Enrich', desc: 'Extracting contact emails, phones & socials...' },
+    { title: '3. Lead Scoring', desc: 'Evaluating marketing gaps & budget intent...' },
+    { title: '4. Pitch Generation', desc: 'Drafting personalized SOW & cold emails...' },
+    { title: '5. Policy Verification', desc: 'Verifying Meta WhatsApp & anti-spam opt-in...' }
+  ];
+
+  stepperGrid.innerHTML = steps.map(s => `
+    <div class="stepper-card">
+      <div class="step-title">${s.title}</div>
+      <div class="step-desc">${s.desc}</div>
+    </div>
+  `).join('');
 
   try {
     const res = await fetch('/api/command-center/execute', {
@@ -218,88 +273,176 @@ async function executeCommandCenterWorkflow() {
     const data = await res.json();
     state.activeCampaign = data;
 
-    // Render Steps
-    stepperSteps.innerHTML = (data.executionSteps || []).map(s => `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="color:var(--accent-green);">✅</span>
-        <strong>Step ${s.step}: ${s.title}</strong>
-        <span style="color:var(--text-faint); margin-left:auto;">${s.detail}</span>
+    // Mark steps as completed
+    stepperGrid.innerHTML = (data.executionSteps || []).slice(0, 5).map(s => `
+      <div class="stepper-card done">
+        <div class="step-title" style="color:var(--green);">✅ Step ${s.step}</div>
+        <div class="step-desc">${s.title}</div>
       </div>
     `).join('');
 
-    // Render Review Table & Human Approval Actions
-    renderCampaignApprovalTable(data, reviewArea);
+    document.getElementById('cc-stepper-status').innerText = 'COMPLETED (APPROVAL REQUIRED)';
+    document.getElementById('cc-stepper-status').style.color = 'var(--green)';
+
+    // Render the beautiful campaign cards
+    resultsArea.innerHTML = renderCampaignCards(data);
   } catch (err) {
-    stepperSteps.innerHTML += `<div style="color:var(--accent-red);">❌ Error: ${err.message}</div>`;
+    resultsArea.innerHTML = `<div style="color:var(--red); padding:20px;">❌ Error executing workflow: ${err.message}</div>`;
   } finally {
     btn.disabled = false;
-    btn.innerText = 'Execute Command ⚡';
+    btn.innerHTML = `<span>Launch AI Workflow</span> <span>➔</span>`;
   }
 }
 
-function renderCampaignApprovalTable(campaign, container) {
-  const leads = campaign.leads || [];
-  container.innerHTML = `
-    <div style="margin-top:24px; border-top:1px solid var(--border-color); padding-top:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+function renderSampleOrStagedLeads() {
+  if (state.activeCampaign) {
+    return renderCampaignCards(state.activeCampaign);
+  }
+
+  // Initial preview when user opens page
+  const sampleLeads = [
+    {
+      id: 'l1',
+      businessName: 'Zivame Fashion Hub',
+      category: "D2C Women's Fashion",
+      location: 'South Extension, Delhi',
+      website: 'https://zivame.example.com',
+      phone: '+91 9811122334',
+      email: 'growth@zivame.example.com',
+      leadScore: 96,
+      recommendedServices: ['Performance Marketing (₹25k-₹30k)', 'AI Video Production (₹20k-₹30k)'],
+      pitchSubject: 'Scaling Zivame Fashion Hub ROAS with AI Creatives & Meta Ads',
+      pitchBody: 'Hi Team Zivame,\n\nI reviewed your latest collections in Delhi. We specialize in high-converting Meta Ads and AI video creatives that slash CAC while driving qualified orders. Would you be open to reviewing a short 3-pillar growth plan this week?\n\nBest,\nMayank Aggarwal\nCo-Founder & AI Creative Head, KLIKWise\n+91 9217756033'
+    },
+    {
+      id: 'l2',
+      businessName: 'Nykaa Luxe Boutique',
+      category: 'Luxury Beauty & Cosmetics',
+      location: 'Connaught Place, Delhi',
+      website: 'https://nykaa.example.com',
+      phone: '+91 9811133445',
+      email: 'partnerships@nykaa.example.com',
+      leadScore: 92,
+      recommendedServices: ['Social Growth Retainer (₹20k-₹25k)', 'WhatsApp Marketing Automation'],
+      pitchSubject: 'Enhancing Nykaa Luxe Customer Acquisition & Retention in Delhi NCR',
+      pitchBody: 'Hi Nykaa Luxe Team,\n\nYour brand presence in Connaught Place is strong, but your organic-to-paid conversion funnel has massive upside. We build automated WhatsApp funnels and viral short-form reels that convert browsers into high-LTV buyers.\n\nWarm regards,\nMayank Aggarwal\nKLIKWise | +91 9217756033'
+    },
+    {
+      id: 'l3',
+      businessName: 'DLF Luxury Estates',
+      category: 'Real Estate Developer',
+      location: 'Cyber City, Gurgaon',
+      website: 'https://dlf.example.com',
+      phone: '+91 9811144556',
+      email: 'marketing@dlf.example.com',
+      leadScore: 94,
+      recommendedServices: ['Performance Growth Package (₹25k-₹30k)', 'High-Net-Worth Lead Funnels'],
+      pitchSubject: 'High-Ticket Investor Lead Generation for Luxury DLF Projects',
+      pitchBody: 'Dear DLF Marketing Team,\n\nWe specialize in high-intent Meta and Google Performance Max campaigns for luxury real estate across Delhi NCR and NRI corridors, driving verified site visits at optimized CPL.\n\nSincerely,\nMayank Aggarwal\nCo-Founder, KLIKWise'
+    }
+  ];
+
+  return `
+    <div style="margin-top:20px;">
+      <div class="campaign-bar">
         <div>
-          <h3 style="font-size:16px; color:#fff;">Campaign Staged: ${campaign.plan.niche} (${campaign.plan.location})</h3>
-          <p style="font-size:12px; color:var(--text-muted);">${leads.length} Qualified prospects pending Mayank Aggarwal's approval before sending.</p>
+          <h3 style="font-size:16px; color:#fff; font-weight:700;">Sample Qualified Target Leads (Delhi NCR)</h3>
+          <p style="font-size:12px; color:var(--text-secondary);">Click any prompt above to discover real live leads, or click "View AI Pitch" to review drafted messages.</p>
         </div>
-        <div style="display:flex; gap:10px;">
-          <button class="secondary-btn" style="color:var(--accent-red); border-color:var(--accent-red);" onclick="alert('Campaign discarded. Leads retained in research pool.')">Reject Batch</button>
-          <button class="action-btn" onclick="approveCurrentCampaign('${campaign.campaignId}')">✅ Approve & Launch Outreach (${leads.length})</button>
+        <div class="campaign-actions">
+          <button class="btn-primary" onclick="alert('Demo: Leads approved! Enrolled into automated follow-up cadence.')">
+            ✅ 1-Click Approve All (3)
+          </button>
         </div>
       </div>
-
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Company</th>
-            <th>Contact / Web</th>
-            <th>Lead Score</th>
-            <th>Recommended Services</th>
-            <th>WhatsApp Status</th>
-            <th>Personalized Pitch Preview</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${leads.map(l => `
-            <tr>
-              <td>
-                <strong>${l.businessName}</strong><br>
-                <span style="font-size:11px; color:var(--text-faint);">${l.location}</span>
-              </td>
-              <td>
-                <div style="font-size:12px;"><a href="${l.website}" target="_blank" style="color:var(--accent-cyan);">${l.website || 'No Website'}</a></div>
-                <div style="font-size:11px; color:var(--text-muted);">${l.email || l.phone || 'Contact pending'}</div>
-              </td>
-              <td>
-                <span class="badge ${l.leadScore >= 80 ? 'badge-green' : 'badge-blue'}">${l.leadScore}/100</span>
-              </td>
-              <td>
-                <div style="font-size:11px; color:var(--accent-purple);">${(l.recommendedServices || []).slice(0, 2).join(', ')}</div>
-              </td>
-              <td>
-                <span class="badge badge-amber" title="${l.whatsappCompliance.reason}">Opt-In Required</span>
-              </td>
-              <td>
-                <button class="secondary-btn" style="padding:4px 8px; font-size:11px;" onclick="previewPitchModal('${l.id}')">View Pitch ✉️</button>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
+      <div class="leads-grid">
+        ${sampleLeads.map(l => renderLeadCardHtml(l)).join('')}
+      </div>
     </div>
   `;
 }
 
-function previewPitchModal(leadId) {
-  const lead = (state.activeCampaign?.leads || []).find(l => l.id === leadId);
-  if (!lead) return;
+function renderCampaignCards(campaign) {
+  const leads = campaign.leads || [];
+  return `
+    <div style="margin-top:24px;">
+      <div class="campaign-bar">
+        <div>
+          <h3 style="font-size:18px; color:#fff; font-weight:700;">
+            Staged Campaign: ${campaign.plan?.niche || 'Target Niche'} (${campaign.plan?.location || 'Delhi NCR'})
+          </h3>
+          <p style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
+            <strong>${leads.length} Qualified Prospects</strong> discovered. Human review required before dispatching email & WhatsApp outreach.
+          </p>
+        </div>
+        <div class="campaign-actions">
+          <button class="btn-secondary" onclick="alert('Campaign discarded. Leads saved to research pool.')">
+            Reject Batch
+          </button>
+          <button class="btn-primary" onclick="approveCurrentCampaign('${campaign.campaignId}')">
+            ✅ One-Click Approve All & Launch (${leads.length})
+          </button>
+        </div>
+      </div>
 
-  const pitch = lead.pitchDraft || {};
-  alert(`EMAIL OUTREACH PREVIEW FOR ${lead.businessName}:\n\nSubject: ${pitch.subject}\n\n${pitch.body}`);
+      <div class="leads-grid">
+        ${leads.map(l => renderLeadCardHtml(l)).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderLeadCardHtml(lead) {
+  const services = (lead.recommendedServices || ['Performance Marketing', 'AI Video Production']).slice(0, 2);
+  const scoreClass = lead.leadScore >= 90 ? 'green' : 'cyan';
+
+  return `
+    <div class="lead-card">
+      <div class="lead-header">
+        <div>
+          <div class="lead-name">${lead.businessName}</div>
+          <div class="lead-category">${lead.category || 'Local Business'} • ${lead.location || 'Delhi NCR'}</div>
+        </div>
+        <div class="lead-score-ring">
+          ${lead.leadScore || 90}/100
+        </div>
+      </div>
+
+      <div class="lead-contact-box">
+        <div class="contact-line">
+          <span>🌐</span>
+          <a href="${lead.website || '#'}" target="_blank">${lead.website ? lead.website.replace('https://', '') : 'Website Discovered'}</a>
+        </div>
+        <div class="contact-line">
+          <span>📞</span>
+          <span>${lead.phone || '+91 98111 XXXXX'}</span>
+          <button style="margin-left:auto; background:none; border:none; color:var(--cyan); cursor:pointer; font-size:11px;" onclick="copyToClipboard('${lead.phone}')">Copy</button>
+        </div>
+        <div class="contact-line">
+          <span>✉️</span>
+          <span>${lead.email || 'contact@brand.com'}</span>
+        </div>
+      </div>
+
+      <div class="service-tags">
+        ${services.map(s => `<span class="service-pill">${s}</span>`).join('')}
+      </div>
+
+      <div class="lead-footer">
+        <div class="compliance-badge">
+          <span>🛡️</span> Opt-in Required
+        </div>
+        <button class="btn-view-pitch" onclick="previewPitchModal('${lead.id}', '${encodeURIComponent(JSON.stringify(lead))}')">
+          Read AI Pitch ✉️
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text);
+  alert(`Copied: ${text}`);
 }
 
 async function approveCurrentCampaign(campaignId) {
@@ -309,587 +452,544 @@ async function approveCurrentCampaign(campaignId) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ campaignId })
     });
-    const result = await res.json();
-    if (result.success) {
-      alert(`🎉 SUCCESS:\n${result.message}\nCRM Pipeline stage updated to "Contacted". Follow-up cadence initiated.`);
-      navigateToModule('crm_pipeline');
-    }
+    const data = await res.json();
+    alert(`🎉 Success! Campaign approved.\n${data.approvedCount || 'All'} leads have been staged into Listmonk and Meta WhatsApp queues with active Day-0, Day-3, Day-7 follow-up cadence.`);
   } catch (err) {
-    alert('Approval error: ' + err.message);
+    alert('Failed to approve campaign: ' + err.message);
   }
 }
 
-// -------------------------------------------------------------
-// MODULE 1: OVERVIEW DASHBOARD
-// -------------------------------------------------------------
-function renderOverviewDashboard(el) {
+// Modal Handling
+function previewPitchModal(leadId, encodedLead) {
+  let lead = null;
+  if (encodedLead) {
+    try { lead = JSON.parse(decodeURIComponent(encodedLead)); } catch(e){}
+  }
+  if (!lead && state.activeCampaign?.leads) {
+    lead = state.activeCampaign.leads.find(l => l.id === leadId);
+  }
+  if (!lead) return;
+
+  document.getElementById('modal-business-name').innerText = lead.businessName;
+  document.getElementById('modal-lead-score').innerText = `Lead Score: ${lead.leadScore}/100`;
+  document.getElementById('modal-recipient').innerText = lead.email || `${lead.businessName} Contact Team`;
+  document.getElementById('modal-service').innerText = (lead.recommendedServices || ['Performance Marketing'])[0];
+  document.getElementById('modal-subject').innerText = lead.pitchSubject || `Growth Strategy for ${lead.businessName} (Delhi NCR)`;
+  document.getElementById('modal-body-text').innerText = lead.pitchBody || `Dear ${lead.businessName} Team,\n\nI reviewed your marketing presence in Delhi NCR and identified a major opportunity to scale revenue through dedicated Meta Ads and AI-driven creative storytelling.\n\nBest,\nMayank Aggarwal\nKLIKWise`;
+
+  document.getElementById('pitch-modal').style.display = 'flex';
+}
+
+function closePitchModal() {
+  document.getElementById('pitch-modal').style.display = 'none';
+}
+
+// ==========================================================================
+// TAB 2: AI SALES AGENT & WHATSAPP INTERACTIVE LAB
+// ==========================================================================
+function renderAiSales(el) {
   el.innerHTML = `
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-header">Discovered Businesses <span>📍</span></div>
-        <div class="kpi-value">124</div>
-        <div class="kpi-trend">↑ +35 this month</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-header">Qualified Leads <span>🎯</span></div>
-        <div class="kpi-value">86</div>
-        <div class="kpi-trend">Score Avg: 84/100</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-header">Active CRM Deals <span>💼</span></div>
-        <div class="kpi-value">14</div>
-        <div class="kpi-trend">Pipeline: ₹3,85,000</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-header">Deals Won / Closed <span>🏆</span></div>
-        <div class="kpi-value">6</div>
-        <div class="kpi-trend" style="color:var(--accent-green);">Revenue: ₹1,65,000</div>
-      </div>
-    </div>
-
-    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
-      <div class="card">
-        <div class="card-title">
-          <span>Real Client Acquisition Funnel (Live Database)</span>
-          <button class="secondary-btn" onclick="navigateToModule('crm_pipeline')">Open 14-Stage CRM →</button>
+    <div class="chat-layout">
+      <!-- Left: Interactive Chat Simulator -->
+      <div class="chat-panel">
+        <div class="chat-header">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="pulse-dot green"></div>
+            <div>
+              <h3 style="font-size:14px; color:#fff; font-weight:700;">Mayank Aggarwal's Autonomous AI Sales Agent</h3>
+              <span style="font-size:11px; color:var(--text-muted);">Trained on KLIKWise Master Profile & INR Pricing Rules</span>
+            </div>
+          </div>
+          <button class="btn-secondary" style="padding:6px 12px; font-size:11px;" onclick="clearSalesChat()">Clear Chat</button>
         </div>
-        <div style="display:flex; flex-direction:column; gap:12px; margin-top:14px; font-size:12px;">
-          <div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-              <span>1. New & Researched Leads</span>
-              <span>124</span>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="sales-chat-box">
+          ${state.chatHistory.map(m => `
+            <div class="chat-bubble ${m.sender}">
+              ${m.text.replace(/\n/g, '<br>')}
             </div>
-            <div style="background:#1F293D; height:8px; border-radius:4px;"><div style="background:#3B82F6; width:100%; height:100%; border-radius:4px;"></div></div>
-          </div>
-          <div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-              <span>2. Contacted via Email & Verified WhatsApp</span>
-              <span>86 (69%)</span>
-            </div>
-            <div style="background:#1F293D; height:8px; border-radius:4px;"><div style="background:#06B6D4; width:69%; height:100%; border-radius:4px;"></div></div>
-          </div>
-          <div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-              <span>3. Replied & Interested (In Sales Dialogue)</span>
-              <span>28 (22%)</span>
-            </div>
-            <div style="background:#1F293D; height:8px; border-radius:4px;"><div style="background:#8B5CF6; width:22%; height:100%; border-radius:4px;"></div></div>
-          </div>
-          <div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-              <span>4. Formal Proposals Sent (Documenso SOW)</span>
-              <span>14 (11%)</span>
-            </div>
-            <div style="background:#1F293D; height:8px; border-radius:4px;"><div style="background:#F59E0B; width:11%; height:100%; border-radius:4px;"></div></div>
-          </div>
-          <div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-              <span>5. Deals Won (Active Client Retainers)</span>
-              <span>6 (5%)</span>
-            </div>
-            <div style="background:#1F293D; height:8px; border-radius:4px;"><div style="background:#10B981; width:5%; height:100%; border-radius:4px;"></div></div>
-          </div>
+          `).join('')}
+        </div>
+
+        <!-- Quick Question Prompts -->
+        <div style="padding:8px 20px; background:rgba(0,0,0,0.15); display:flex; flex-wrap:wrap; gap:6px;">
+          <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('What are your Performance Marketing charges?')">💰 Performance Marketing Charges?</button>
+          <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('Can you rank my website on Google with SEO?')">❌ Do you do SEO?</button>
+          <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('Where can I see your previous work / portfolio?')">📁 Show Portfolio</button>
+          <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('Can you give a 50% discount for a startup?')">🏷️ Can I get a 50% discount?</button>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <div class="chat-input-bar">
+          <input 
+            type="text" 
+            id="sales-chat-input" 
+            class="chat-input" 
+            placeholder="Type any client inquiry, objection, or question to test your AI sales rep..." 
+            onkeydown="if(event.key==='Enter') sendSalesMessage()"
+          >
+          <button class="btn-execute" style="padding:0 20px; font-size:13px;" onclick="sendSalesMessage()">
+            Send ➔
+          </button>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Pending Human Approvals</div>
-        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Operating under Mode B (Approval Mode):</p>
-        <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; font-size:12px;">
-          <li style="background:#0B0F19; border:1px solid var(--border-color); border-radius:6px; padding:10px;">
-            <strong style="color:#fff;">D2C Fashion Outreach Batch</strong>
-            <p style="color:var(--text-muted); font-size:11px;">10 Verified leads in Delhi • Ready to send</p>
-            <button class="action-btn" style="padding:4px 8px; font-size:11px; margin-top:6px;" onclick="navigateToModule('command_center')">Review in Command Center</button>
-          </li>
-          <li style="background:#0B0F19; border:1px solid var(--border-color); border-radius:6px; padding:10px;">
-            <strong style="color:#fff;">Gurgaon Real Estate Proposal</strong>
-            <p style="color:var(--text-muted); font-size:11px;">DLF Partner SOW (₹25,000/mo) • Pending signature</p>
-            <button class="secondary-btn" style="padding:4px 8px; font-size:11px; margin-top:6px;" onclick="navigateToModule('proposals')">Review Proposal</button>
-          </li>
-        </ul>
+      <!-- Right: Meta WhatsApp Coexistence & Rules Panel -->
+      <div class="info-panel">
+        <div class="info-card">
+          <h4><span>💬</span> Meta WhatsApp Status</h4>
+          <div style="font-size:12px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--text-muted);">Coexistence Mode:</span>
+              <span style="color:var(--green); font-weight:600;">ACTIVE</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--text-muted);">Service Window:</span>
+              <span style="color:var(--cyan); font-weight:600;">24-Hr Standard</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--text-muted);">Opt-Out Keyword:</span>
+              <span style="color:var(--red); font-weight:600;">STOP</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h4><span>🛡️</span> Strict Anti-Spam Guardrails</h4>
+          <p style="font-size:11px; color:var(--text-secondary); line-height:1.5;">
+            • Zero unsolicited cold WhatsApp blasts.<br>
+            • Only Meta-approved templates sent initially.<br>
+            • Freeform text permitted only after prospect replies.<br>
+            • Instant suppression if prospect texts "STOP".
+          </p>
+        </div>
+
+        <div class="info-card">
+          <h4><span>👑</span> Executive Credentials</h4>
+          <p style="font-size:11px; color:var(--text-secondary); line-height:1.5;">
+            Founder: <strong>Mayank Aggarwal</strong><br>
+            Role: Co-Founder & AI Creative Head<br>
+            Phone: +91 9217756033<br>
+            Email: riyansh.studio007@gmail.com
+          </p>
+        </div>
       </div>
     </div>
   `;
 }
 
-// -------------------------------------------------------------
-// MODULE 8: AUTONOMOUS AI SALES AGENT (CONVERSATION CONSOLE)
-// -------------------------------------------------------------
-function renderAiSalesAgent(el) {
-  el.innerHTML = `
-    <div class="card" style="display:flex; flex-direction:column; height:640px;">
-      <div class="card-title">
-        <span>🤖 KLIKWise AI Sales Representative (Mayank Aggarwal Co-Pilot)</span>
-        <span class="badge badge-green">Online & Knowledge Base Active</span>
-      </div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
-        Acts as your AI representative. Explains services, quotes approved INR prices, handles objections (low ROAS, bad agency experiences), shares your portfolio, and strictly declines SEO retainers.
-      </p>
-
-      <div class="console-box" id="sales-chat-window" style="flex:1; margin-bottom:14px;">
-[KLIKWise AI Sales Representative Online]
-Identity: Representative for Mayank Aggarwal (Co-Founder & AI Creative Head)
-Capabilities: Meta/Google Ads, AI Video Production, UGC Ads, Web Dev, WhatsApp Funnels.
-Try asking:
-- "What do you charge for Meta Ads and social media?"
-- "Can you do SEO for our website?"
-- "We are currently running ads but not getting good results."
-- "Can I see your past work and portfolio?"
-- "Can you give us a 50% discount?"
-      </div>
-
-      <div style="display:flex; gap:10px;">
-        <input type="text" id="sales-chat-input" class="search-bar" style="flex:1; width:auto;" placeholder="Type prospect inquiry to simulate or test sales conversation..." onkeydown="if(event.key==='Enter') sendSalesMessage()">
-        <button class="action-btn" onclick="sendSalesMessage()">Send Message →</button>
-      </div>
-    </div>
-  `;
+function sendPresetSalesQuestion(text) {
+  const input = document.getElementById('sales-chat-input');
+  if (input) {
+    input.value = text;
+    sendSalesMessage();
+  }
 }
 
 async function sendSalesMessage() {
   const input = document.getElementById('sales-chat-input');
-  const chatWindow = document.getElementById('sales-chat-window');
-  const text = input.value.trim();
-  if (!text) return;
+  const chatBox = document.getElementById('sales-chat-box');
+  const msgText = input ? input.value.trim() : '';
+  if (!msgText) return;
 
-  chatWindow.innerHTML += `\n\nPROSPECT: "${text}"\n[Thinking with KLIKWise Rate Card & Commercial Governance...]`;
+  // Append user bubble
+  state.chatHistory.push({ sender: 'user', text: msgText });
   input.value = '';
+  renderChatMessages();
 
   try {
     const res = await fetch('/api/sales-agent/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text, context: { companyName: 'Prospect Brand' } })
+      body: JSON.stringify({
+        message: msgText,
+        history: state.chatHistory.slice(-5)
+      })
     });
     const data = await res.json();
-    chatWindow.innerHTML += `\n\nKLIKWISE AI SALES REP:\n${data.reply}`;
-    if (data.escalateToFounder) {
-      chatWindow.innerHTML += `\n⚠️ [SYSTEM ACTION: Unlisted discount/financial negotiation flagged for Mayank Aggarwal (+91 9217756033)]`;
-    }
+    state.chatHistory.push({
+      sender: 'agent',
+      text: data.reply || "Thank you for reaching out to KLIKWise. Let me prepare a custom proposal for your brand."
+    });
+    renderChatMessages();
   } catch (err) {
-    chatWindow.innerHTML += `\nError: ${err.message}`;
+    state.chatHistory.push({
+      sender: 'agent',
+      text: `Error connecting to AI sales agent: ${err.message}`
+    });
+    renderChatMessages();
   }
-  chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// -------------------------------------------------------------
-// MODULE 10: CRM PIPELINE (14 STAGES)
-// -------------------------------------------------------------
+function renderChatMessages() {
+  const chatBox = document.getElementById('sales-chat-box');
+  if (!chatBox) return;
+  chatBox.innerHTML = state.chatHistory.map(m => `
+    <div class="chat-bubble ${m.sender}">
+      ${m.text.replace(/\n/g, '<br>')}
+    </div>
+  `).join('');
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function clearSalesChat() {
+  state.chatHistory = [
+    {
+      sender: 'agent',
+      text: "Hello! I am Mayank Aggarwal's Autonomous AI Sales Agent for KLIKWise. How can I assist you with your marketing or growth goals today?"
+    }
+  ];
+  renderChatMessages();
+}
+
+// ==========================================================================
+// TAB 3: LEADS & CRM PIPELINE
+// ==========================================================================
 function renderCrmPipeline(el) {
   const stages = [
-    '1. New Lead', '2. Researched', '3. Qualified', '4. Outreach Ready',
-    '5. Contacted', '6. Replied', '7. Interested', '8. Discovery',
-    '9. Proposal Sent', '10. Negotiation', '11. Won', '12. Lost',
-    '13. Follow-up Required', '14. Unsubscribed'
+    { id: 'discovered', name: '1. Discovered', count: 4 },
+    { id: 'qualified', name: '2. Qualified', count: 3 },
+    { id: 'outreach', name: '3. Outreach Sent', count: 5 },
+    { id: 'active', name: '4. In Discussion', count: 2 },
+    { id: 'closed', name: '5. Deal Won', count: 1 }
+  ];
+
+  const leads = [
+    { name: 'Zivame Fashion Hub', stage: 'qualified', score: 96, phone: '+91 9811122334', category: "D2C Fashion" },
+    { name: 'Nykaa Luxe Delhi', stage: 'outreach', score: 92, phone: '+91 9811133445', category: 'Beauty & Retail' },
+    { name: 'DLF Luxury Estates', stage: 'active', score: 94, phone: '+91 9811144556', category: 'Real Estate' },
+    { name: 'Raw Mango Delhi', stage: 'discovered', score: 88, phone: '+91 9811155667', category: 'Luxury Apparel' },
+    { name: 'The Bombay Canteen Delhi', stage: 'closed', score: 95, phone: '+91 9811166778', category: 'Hospitality' }
   ];
 
   el.innerHTML = `
-    <div class="card">
-      <div class="card-title">
-        <span>CRM Deal Pipeline (14 Lifecycle Stages)</span>
-        <button class="action-btn" onclick="navigateToModule('command_center')">+ Run Prospect Discovery</button>
+    <div class="glass-card" style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h2 style="font-size:18px; color:#fff; font-weight:700;">KLIKWise CRM & Deal Pipeline</h2>
+          <p style="font-size:12px; color:var(--text-secondary);">Interactive visual lifecycle across 14 synchronized stages with Twenty CRM.</p>
+        </div>
+        <button class="btn-primary" onclick="alert('Syncing active deals with Twenty CRM instance...')">🔄 Sync Twenty CRM</button>
       </div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
-        Central customer identity model ensuring zero duplicate leads across search campaigns.
-      </p>
+    </div>
 
-      <div style="display:flex; gap:12px; overflow-x:auto; padding-bottom:16px;">
-        ${stages.map((st, idx) => `
-          <div style="min-width:210px; background:#0B0F19; border:1px solid var(--border-color); border-radius:8px; padding:12px;">
-            <div style="font-size:11px; font-weight:700; color:${idx === 10 ? 'var(--accent-green)' : 'var(--text-muted)'}; text-transform:uppercase; margin-bottom:10px;">
-              ${st}
-            </div>
-            ${idx === 0 ? `
-              <div class="card" style="padding:10px; margin-bottom:8px; font-size:12px;">
-                <strong>Bella Boutique</strong><br><span style="color:var(--text-faint);">D2C Fashion • Delhi</span>
-              </div>
-            ` : ''}
-            ${idx === 3 ? `
-              <div class="card" style="padding:10px; margin-bottom:8px; font-size:12px;">
-                <strong>Aura Wellness</strong><br><span style="color:var(--text-faint);">Beauty • Score: 92/100</span>
-              </div>
-            ` : ''}
-            ${idx === 4 ? `
-              <div class="card" style="padding:10px; margin-bottom:8px; font-size:12px;">
-                <strong>Zivame Hub</strong><br><span style="color:var(--text-faint);">Email sent • Day 0</span>
-              </div>
-            ` : ''}
-            ${idx === 8 ? `
-              <div class="card" style="padding:10px; margin-bottom:8px; font-size:12px;">
-                <strong>DLF Luxury</strong><br><span style="color:var(--accent-cyan);">₹25,000/mo Retainer</span>
-              </div>
-            ` : ''}
-            ${idx === 10 ? `
-              <div class="card" style="padding:10px; border-left:3px solid var(--accent-green); font-size:12px;">
-                <strong>Alpha Tech Labs</strong><br><span style="color:var(--accent-green);">₹35,000/mo Active</span>
-              </div>
-            ` : ''}
+    <div class="kanban-board">
+      ${stages.map(st => `
+        <div class="kanban-col">
+          <div class="kanban-col-header">
+            <span class="col-title">${st.name}</span>
+            <span class="col-badge">${leads.filter(l => l.stage === st.id).length}</span>
           </div>
-        `).join('')}
-      </div>
+          <div class="kanban-cards">
+            ${leads.filter(l => l.stage === st.id).map(l => `
+              <div class="crm-card">
+                <div style="font-weight:700; color:#fff; margin-bottom:4px;">${l.name}</div>
+                <div style="font-size:11px; color:var(--cyan); margin-bottom:6px;">${l.category}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:var(--text-muted);">
+                  <span>📞 ${l.phone}</span>
+                  <span style="color:var(--green); font-weight:700;">${l.score}/100</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
     </div>
   `;
 }
 
-// -------------------------------------------------------------
-// MODULE 11: PROPOSALS & QUOTATIONS
-// -------------------------------------------------------------
-function renderProposals(el) {
+// ==========================================================================
+// TAB 4: PROPOSALS & MASTER PRICING CATALOGUE
+// ==========================================================================
+function renderProposalsPricing(el) {
   el.innerHTML = `
-    <div class="card">
-      <div class="card-title">
-        <span>Branded Proposals & SOW Generator</span>
-        <button class="action-btn" onclick="generateSampleProposal()">Generate Client Proposal</button>
-      </div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
-        Produces transparent, branded Statements of Work (SOW) referencing Mayank Aggarwal, approved INR pricing, two revision rounds, and client-owned ad accounts.
-      </p>
+    <div class="proposal-grid">
+      <!-- Left: Interactive SOW Generator Form -->
+      <div class="glass-card">
+        <h3 style="font-size:16px; color:#fff; font-weight:700; margin-bottom:16px;">
+          📝 1-Click SOW Proposal Generator
+        </h3>
+        <p style="font-size:12px; color:var(--text-secondary); margin-bottom:20px;">
+          Generate a legally compliant, client-ready Scope of Work Statement customized with Mayank Aggarwal's credentials and approved INR pricing.
+        </p>
 
-      <div id="proposal-output-preview" style="background:#070B12; border:1px solid var(--border-color); border-radius:8px; padding:20px; font-family:monospace; font-size:12px; line-height:1.6; color:#E2E8F0;">
-[Click 'Generate Client Proposal' above to build a live branded proposal document]
+        <div class="form-group">
+          <label class="form-label">Client / Business Name</label>
+          <input type="text" id="prop-client-name" class="form-input" value="Luxe Vogue Apparel" placeholder="Enter company name">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Select Approved KLIKWise Package</label>
+          <select id="prop-package-select" class="form-select" onchange="updateProposalPricingPreview()">
+            <option value="performance">Performance Growth Package (₹25,000 - ₹30,000/mo)</option>
+            <option value="social">Social Growth Package (₹20,000 - ₹25,000/mo)</option>
+            <option value="ai_creative">AI Creative & UGC Growth (₹20,000 - ₹30,000/mo)</option>
+            <option value="complete">Complete Business Growth OS (₹35,000 - ₹40,000/mo)</option>
+            <option value="starter">Starter Digital Presence (₹15,000 - ₹18,000/mo)</option>
+            <option value="web_dev">Web Development Project (₹35,000 - ₹75,000 fixed)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Client Target Location</label>
+          <input type="text" id="prop-location" class="form-input" value="Delhi NCR & Pan-India" placeholder="Target region">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Custom Deliverable Notes</label>
+          <textarea id="prop-notes" class="form-input" style="height:70px; resize:none;" placeholder="Optional custom scope additions...">Bi-weekly KPI reporting, Meta Pixel + GA4 sync, 8 Short-form AI Reels.</textarea>
+        </div>
+
+        <button class="btn-execute" style="width:100%; justify-content:center; padding:12px;" onclick="generateClientProposal()">
+          Generate Official Proposal ➔
+        </button>
+      </div>
+
+      <!-- Right: Live Branded SOW Preview / Print Box -->
+      <div id="proposal-preview-area">
+        ${renderProposalPreviewHtml()}
+      </div>
+    </div>
+
+    <!-- Master INR Pricing Table -->
+    <div class="glass-card" style="margin-top:24px;">
+      <h3 style="font-size:16px; color:#fff; font-weight:700; margin-bottom:14px;">
+        🏷️ Master Service Catalogue & Approved INR Pricing
+      </h3>
+      <table style="width:100%; border-collapse:collapse; font-size:12px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border-subtle); color:var(--text-muted); text-align:left;">
+            <th style="padding:10px;">Package Name</th>
+            <th style="padding:10px;">Category</th>
+            <th style="padding:10px;">Key Deliverables</th>
+            <th style="padding:10px;">Approved Pricing (INR)</th>
+            <th style="padding:10px;">Ad Spend Policy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border-subtle);">
+            <td style="padding:12px; font-weight:700; color:#fff;">Starter Digital Presence</td>
+            <td style="padding:12px; color:var(--cyan);">Social Media</td>
+            <td style="padding:12px; color:var(--text-secondary);">12 Posts/mo, 4 Reels, Content Calendar, Scheduling</td>
+            <td style="padding:12px; font-weight:700; color:var(--green);">₹15,000 - ₹18,000/mo</td>
+            <td style="padding:12px; color:var(--text-muted);">N/A (Organic)</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-subtle);">
+            <td style="padding:12px; font-weight:700; color:#fff;">Social Growth Package</td>
+            <td style="padding:12px; color:var(--cyan);">Social Marketing</td>
+            <td style="padding:12px; color:var(--text-secondary);">Full Strategy, 4 Content Pillars, Reels, Bi-Weekly Reports</td>
+            <td style="padding:12px; font-weight:700; color:var(--green);">₹20,000 - ₹25,000/mo</td>
+            <td style="padding:12px; color:var(--text-muted);">Optional Boosts</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-subtle); background:rgba(0, 242, 254, 0.03);">
+            <td style="padding:12px; font-weight:700; color:var(--cyan);">Performance Growth (Flagship)</td>
+            <td style="padding:12px; color:var(--cyan);">Paid Performance Ads</td>
+            <td style="padding:12px; color:var(--text-secondary);">Meta Ads + Google Ads, Pixel/GA4 Sync, Retargeting, CPL/ROAS Opt</td>
+            <td style="padding:12px; font-weight:700; color:var(--green);">₹25,000 - ₹30,000/mo</td>
+            <td style="padding:12px; color:var(--amber);">Paid directly by client to ad platforms</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-subtle);">
+            <td style="padding:12px; font-weight:700; color:#fff;">AI Creative & UGC Growth</td>
+            <td style="padding:12px; color:var(--purple);">AI Filmmaking</td>
+            <td style="padding:12px; color:var(--text-secondary);">8 AI Brand Reels, 4 UGC Creatives, ElevenLabs Voiceovers</td>
+            <td style="padding:12px; font-weight:700; color:var(--green);">₹20,000 - ₹30,000/mo</td>
+            <td style="padding:12px; color:var(--text-muted);">Ad Spend Separate</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-subtle);">
+            <td style="padding:12px; font-weight:700; color:#fff;">Complete Business Growth OS</td>
+            <td style="padding:12px; color:var(--cyan);">Omnichannel Retainer</td>
+            <td style="padding:12px; color:var(--text-secondary);">Paid Ads + Organic Social + AI Video + WhatsApp Automation</td>
+            <td style="padding:12px; font-weight:700; color:var(--green);">₹35,000 - ₹40,000/mo</td>
+            <td style="padding:12px; color:var(--amber);">Paid directly by client to ad platforms</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:14px; font-size:11px; color:var(--text-muted);">
+        ⚠️ <strong>Strict Commercial Exclusion:</strong> SEO retainers and speculative sales/ROAS guarantees are strictly excluded from all KLIKWise agreements.
       </div>
     </div>
   `;
 }
 
-async function generateSampleProposal() {
-  const preview = document.getElementById('proposal-output-preview');
-  preview.innerText = 'Drafting formal proposal with approved pricing and deliverables...';
+function updateProposalPricingPreview() {
+  // Can trigger reactive update
+}
 
-  try {
-    const res = await fetch('/api/proposals/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        clientName: 'Vogue D2C Apparel',
-        clientEmail: 'founder@vogued2c.com',
-        servicePackage: 'performance',
-        budgetInr: '₹25,000/month'
-      })
-    });
-    const prop = await res.json();
-    preview.innerHTML = `
-================================================================================
-                    KLIKWise — FORMAL SCOPE OF WORK (SOW)
-================================================================================
-Proposal ID:     ${prop.proposalId}
-Created Date:    ${prop.createdDate}
-Partner Agency:  KLIKWise (Lead: Mayank Aggarwal, +91 9217756033)
-Portfolio:       ${prop.partner.portfolio}
-Client:          ${prop.client.name} (${prop.client.email})
+function generateClientProposal() {
+  const clientName = document.getElementById('prop-client-name').value.trim() || 'Valued Client';
+  const pkg = document.getElementById('prop-package-select').value;
+  const location = document.getElementById('prop-location').value.trim() || 'Delhi NCR';
+  const notes = document.getElementById('prop-notes').value.trim();
 
-SELECTED PACKAGE: ${prop.package}
-INVESTMENT:       ${prop.pricing.amount}
-NOTE:             ${prop.pricing.adSpendNote}
+  const pkgMap = {
+    performance: { name: 'Performance Growth Package', price: '₹25,000 - ₹30,000/month', deliverables: ['Meta Ads Management (Facebook & Instagram)', 'Google Ads Management (Search & Performance Max)', 'Conversion Tracking Synchronization (Meta Pixel + GA4)', 'Retargeting Funnels & Custom Audience Segmentation', 'Bi-Weekly Executive Performance Briefings (Twice a week)'] },
+    social: { name: 'Social Growth Package', price: '₹20,000 - ₹25,000/month', deliverables: ['Full Organic Marketing Strategy', '4 Content Pillars & Viral Reel Formats', 'Post Scheduling & Community Management', 'Bi-Weekly Progress Reports'] },
+    ai_creative: { name: 'AI Creative & UGC Growth Retainer', price: '₹20,000 - ₹30,000/month', deliverables: ['8 AI Brand Video Creatives', '4 Authentic UGC Ads', 'Studio Voiceovers & Sound Design (ElevenLabs)', 'Rapid Creative Refresh Cycles'] },
+    complete: { name: 'Complete Business Growth OS', price: '₹35,000 - ₹40,000/month', deliverables: ['Full Omnichannel Paid Media (Meta + Google)', 'Organic Social Media Strategy', 'Full AI Video & Creative Production Suite', 'WhatsApp Automation Funnels (Interakt)'] },
+    starter: { name: 'Starter Digital Presence Package', price: '₹15,000 - ₹18,000/month', deliverables: ['12 Static & Carousel Posts', '4 Short-Form Reels', 'Hashtags, Copywriting & Scheduling', 'Monthly Growth Briefing'] },
+    web_dev: { name: 'Custom Corporate & Landing Page Web Development', price: '₹35,000 - ₹75,000 (Fixed Project)', deliverables: ['Mobile-Optimized Responsive Architecture', 'High-Converting Sales Funnels', 'Meta Pixel & GA4 Integration', '14 Days Post-Launch Support'] }
+  };
 
-AGREED DELIVERABLES:
-${prop.deliverables.map(d => `• ${d}`).join('\n')}
+  const selected = pkgMap[pkg] || pkgMap.performance;
+  state.generatedProposal = {
+    clientName,
+    location,
+    notes,
+    package: selected
+  };
 
-COMMERCIAL GOVERNANCE & TERMS:
-${prop.terms.map((t, idx) => `${idx + 1}. ${t}`).join('\n')}
-
-Status: ${prop.status}
-================================================================================
-    `;
-  } catch (err) {
-    preview.innerText = 'Error generating proposal: ' + err.message;
+  const previewArea = document.getElementById('proposal-preview-area');
+  if (previewArea) {
+    previewArea.innerHTML = renderProposalPreviewHtml();
   }
 }
 
-// -------------------------------------------------------------
-// MODULE 12: PRICING & SERVICES (NO SEO)
-// -------------------------------------------------------------
-function renderPricingServices(el) {
-  el.innerHTML = `
-    <div class="card">
-      <div class="card-title">
-        <span>KLIKWise Official Pricing Master Sheet (INR - ₹)</span>
-        <span class="badge badge-green">10-20% Below Market Benchmark</span>
-      </div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
-        Official rate card enforced across all AI agents and proposals. All ad spend is paid directly by clients. SEO retainers are strictly excluded.
-      </p>
+function renderProposalPreviewHtml() {
+  const p = state.generatedProposal || {
+    clientName: 'Luxe Vogue Apparel',
+    location: 'Delhi NCR',
+    notes: 'Bi-weekly KPI reporting, Meta Pixel + GA4 sync, 8 Short-form AI Reels.',
+    package: {
+      name: 'Performance Growth Package',
+      price: '₹25,000 - ₹30,000/month',
+      deliverables: [
+        'Meta Ads Management (Facebook & Instagram)',
+        'Google Ads Management (Search & Performance Max)',
+        'Conversion Tracking Synchronization (Meta Pixel + GA4)',
+        'Retargeting Funnels & Custom Audience Segmentation',
+        'Bi-Weekly Executive Performance Briefings (Twice a week)'
+      ]
+    }
+  };
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Service Category</th>
-            <th>Deliverable / Scope</th>
-            <th>Starter / Single</th>
-            <th>Monthly Retainer</th>
-            <th>Key Terms</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Meta Ads (FB & IG)</strong></td>
-            <td>Individual ad setup or complete multi-stage campaign management</td>
-            <td>₹1,800 – ₹2,000 (Ad only)<br>₹5,000 (3 Ads)</td>
-            <td><strong style="color:var(--accent-cyan);">₹15,000 – ₹18,000/mo</strong></td>
-            <td>Ad spend separate; Bi-weekly reporting</td>
-          </tr>
-          <tr>
-            <td><strong>Google Ads Suite</strong></td>
-            <td>Search, Display, Performance Max, YouTube Ads, Negative keywords</td>
-            <td>₹2,500 – ₹4,000 setup</td>
-            <td><strong style="color:var(--accent-cyan);">₹18,000 – ₹28,000/mo</strong></td>
-            <td>Conversion tracking included</td>
-          </tr>
-          <tr>
-            <td><strong>Performance Marketing (7 Channel)</strong></td>
-            <td>Complete multi-platform customer acquisition engine</td>
-            <td>—</td>
-            <td><strong style="color:var(--accent-green);">₹35,000 – ₹40,000/mo</strong></td>
-            <td>Full funnel: Meta + Google + Video + WhatsApp</td>
-          </tr>
-          <tr>
-            <td><strong>Social Media Management</strong></td>
-            <td>12 static/carousel posts + up to 4 short reels + calendar + scheduling</td>
-            <td>₹400–₹1,200 per post</td>
-            <td><strong style="color:var(--accent-cyan);">₹15,000/mo</strong></td>
-            <td>2 rounds of revisions</td>
-          </tr>
-          <tr>
-            <td><strong>Social Media Marketing</strong></td>
-            <td>Brand positioning, 4 content pillars, organic conversion funnel</td>
-            <td>—</td>
-            <td><strong style="color:var(--accent-cyan);">₹20,000/mo</strong></td>
-            <td>Strategy-first growth</td>
-          </tr>
-          <tr>
-            <td><strong>UGC Video Advertisements</strong></td>
-            <td>Product UGC (₹1,000–₹1,500) | Service UGC (₹3,000–₹4,000)</td>
-            <td>₹1,000 – ₹4,000/video</td>
-            <td>Bundles: 3 for ₹3,000 or ₹8,000</td>
-            <td>Authentic feed disruption</td>
-          </tr>
-          <tr>
-            <td><strong>AI Video Filmmaking & 3D</strong></td>
-            <td>3D model videos, 30s Brand Reels (₹1.5k–₹2k), 60s Brand Ads (₹3.5k–₹4k)</td>
-            <td>₹1,500 – ₹4,000/video</td>
-            <td>Documentary: ₹8k–₹15k</td>
-            <td>Runway, Kling, ElevenLabs studio sound</td>
-          </tr>
-          <tr>
-            <td><strong>Web & E-Commerce Development</strong></td>
-            <td>Landing pages (₹5k–₹8k), 5-Page (₹12k–₹18k), E-commerce (₹25k–₹1.5L)</td>
-            <td>₹5,000 – ₹1,50,000</td>
-            <td>Maintenance: ₹2k–₹5k/mo</td>
-            <td>SEO retainers strictly excluded</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-// -------------------------------------------------------------
-// MODULE 6: WHATSAPP MANAGER (META CLOUD API & COEXISTENCE)
-// -------------------------------------------------------------
-function renderWhatsAppManager(el) {
-  el.innerHTML = `
-    <div class="card">
-      <div class="card-title">
-        <span>Meta WhatsApp Cloud API & Coexistence Manager</span>
-        <span class="badge badge-blue">Official Cloud API Compliance</span>
-      </div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
-        Registered for <strong>+91 9217756033</strong>. Designed with WhatsApp Business Coexistence so you can use the mobile app while KLIKWise OS automates customer-service responses and verified template messages.
-      </p>
-
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px;">
-        <div style="background:#0B0F19; border:1px solid var(--border-color); border-radius:8px; padding:16px;">
-          <h4 style="color:#fff; font-size:13px; margin-bottom:8px;">Compliance Rules Enforced:</h4>
-          <ul style="font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:6px;">
-            <li>✅ Zero cold unsolicited promotional broadcasts to scraped numbers.</li>
-            <li>✅ 24-Hour customer service window automatically tracked.</li>
-            <li>✅ Meta pre-approved templates used for authorized notifications.</li>
-            <li>✅ Instant opt-out handling ("STOP" suppresses further messages).</li>
-          </ul>
+  return `
+    <div class="sow-preview-card">
+      <div class="sow-header">
+        <div>
+          <h2 style="font-size:20px; font-weight:800; color:#0F172A;">STATEMENT OF WORK (SOW)</h2>
+          <div style="font-size:12px; color:#64748B; margin-top:4px;">Prepared by <strong>KLIKWise</strong></div>
         </div>
-
-        <div style="background:#0B0F19; border:1px solid var(--border-color); border-radius:8px; padding:16px;">
-          <h4 style="color:#fff; font-size:13px; margin-bottom:8px;">Coexistence Status:</h4>
-          <p style="font-size:12px; color:var(--accent-green); margin-bottom:6px;">● Coexistence Mode Active</p>
-          <p style="font-size:11px; color:var(--text-muted);">
-            You can keep receiving calls and manual chats on your personal/business WhatsApp phone while webhook listeners handle inbound lead qualification.
-          </p>
+        <div style="text-align:right;">
+          <div style="font-weight:700; color:#0F172A;">Date: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+          <div style="font-size:11px; color:#64748B;">Doc ID: KW-${Math.floor(100000 + Math.random() * 900000)}</div>
         </div>
       </div>
 
-      <div class="card-title" style="font-size:14px;">Pre-Approved Meta Message Templates</div>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Template Name</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Template Body</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>klikwise_discovery_followup</code></td>
-            <td>MARKETING</td>
-            <td><span class="badge badge-green">APPROVED</span></td>
-            <td>Hello {{1}}, Mayank Aggarwal here from KLIKWise. Regarding our discussion on {{2}}, here is your proposal: {{3}}</td>
-          </tr>
-          <tr>
-            <td><code>klikwise_meeting_reminder</code></td>
-            <td>UTILITY</td>
-            <td><span class="badge badge-green">APPROVED</span></td>
-            <td>Hi {{1}}, reminder for your growth strategy session with KLIKWise today at {{2}}. Link: {{3}}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid #E2E8F0;">
+        <div>
+          <div style="font-size:11px; text-transform:uppercase; color:#94A3B8; font-weight:700;">Client Details</div>
+          <div style="font-size:14px; font-weight:700; color:#0F172A; margin-top:4px;">${p.clientName}</div>
+          <div style="font-size:12px; color:#64748B;">Target Region: ${p.location}</div>
+        </div>
+        <div>
+          <div style="font-size:11px; text-transform:uppercase; color:#94A3B8; font-weight:700;">Agency Lead & Point of Contact</div>
+          <div style="font-size:14px; font-weight:700; color:#0F172A; margin-top:4px;">Mayank Aggarwal</div>
+          <div style="font-size:12px; color:#64748B;">Co-Founder & AI Creative Head, KLIKWise</div>
+          <div style="font-size:12px; color:#64748B;">📞 +91 9217756033 | ✉️ riyansh.studio007@gmail.com</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-size:11px; text-transform:uppercase; color:#94A3B8; font-weight:700; margin-bottom:8px;">Selected Package Scope</div>
+        <div style="font-size:16px; font-weight:800; color:#0284C7; margin-bottom:10px;">${p.package.name}</div>
+        <ul style="padding-left:18px; font-size:12px; color:#334155; line-height:1.7;">
+          ${p.package.deliverables.map(d => `<li>${d}</li>`).join('')}
+        </ul>
+      </div>
+
+      ${p.notes ? `
+        <div style="margin-bottom:20px; background:#F8FAFC; border-left:3px solid #0284C7; padding:10px 14px; font-size:12px; color:#475569;">
+          <strong>Custom Project Notes:</strong> ${p.notes}
+        </div>
+      ` : ''}
+
+      <div style="background:#F1F5F9; border-radius:8px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+        <div>
+          <div style="font-size:11px; text-transform:uppercase; color:#64748B; font-weight:700;">Investment / Commercials</div>
+          <div style="font-size:20px; font-weight:800; color:#059669;">${p.package.price}</div>
+          <div style="font-size:11px; color:#64748B;">Ad spend is paid directly by client to ad platforms.</div>
+        </div>
+        <button class="btn-primary" style="background:#0F172A; box-shadow:none;" onclick="window.print()">
+          🖨️ Print / Download PDF
+        </button>
+      </div>
+
+      <div style="font-size:10px; color:#94A3B8; line-height:1.4; border-top:1px solid #E2E8F0; padding-top:12px;">
+        * Deliverables commence within 3 business days of onboarding and advance payment. Payment milestones: 50% advance upon contract execution, 50% at mid-cycle or project completion.
+      </div>
     </div>
   `;
 }
 
-// -------------------------------------------------------------
-// MODULE 13: FOLLOW-UP MANAGER (DAY 0, 3, 7, 14)
-// -------------------------------------------------------------
-function renderFollowupManager(el) {
-  el.innerHTML = `
-    <div class="card">
-      <div class="card-title">
-        <span>Follow-Up Automation (Day 0, 3, 7, 14 Engine)</span>
-        <span class="badge badge-cyan">Auto-Pause on Reply</span>
-      </div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
-        Contextual touches designed to deliver audit insights and competitor angles. If the prospect replies or opts out, the sequence immediately suspends.
-      </p>
+// ==========================================================================
+// TAB 5: AI WORKFORCE & GOVERNANCE
+// ==========================================================================
+function renderAgentsSystem(el) {
+  const agents = [
+    { name: 'Command Center Orchestrator', role: 'Workflow Coordinator', status: 'ONLINE', icon: '⚡' },
+    { name: 'Google Maps Business Scraper', role: 'Local Discovery', status: 'ONLINE', icon: '📍' },
+    { name: 'Crawl4AI Web Enrichment', role: 'Contact & Social Extractor', status: 'ONLINE', icon: '🌐' },
+    { name: 'Prospect Scoring Agent', role: 'Lead Qualification', status: 'ONLINE', icon: '🎯' },
+    { name: 'Autonomous AI Sales Agent', role: 'Sales & Objections Rep', status: 'ONLINE', icon: '🤖' },
+    { name: 'WhatsApp Coexistence Manager', role: 'Meta Cloud API Compliance', status: 'ONLINE', icon: '💬' },
+    { name: 'Listmonk Campaign Manager', role: 'Cold Email Dispatcher', status: 'ONLINE', icon: '✉️' },
+    { name: 'Twenty CRM Sync Engine', role: 'CRM Data Synchronizer', status: 'ONLINE', icon: '📊' },
+    { name: 'Documenso Proposal Dispatcher', role: 'Digital Signatures & SOW', status: 'ONLINE', icon: '📝' },
+    { name: 'Cal.com Booking Coordinator', role: 'Appointment Scheduler', status: 'ONLINE', icon: '📅' },
+    { name: 'Follow-Up Cadence Agent', role: 'Day-3/7/14 Nurturing', status: 'ONLINE', icon: '⏱️' },
+    { name: 'Security & Audit Officer', role: 'Zero-Leakage & Governance', status: 'ONLINE', icon: '🛡️' }
+  ];
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Prospect</th>
-            <th>Cadence Step</th>
-            <th>Timing</th>
-            <th>Subject / Hook</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Bella Boutique (Delhi)</strong></td>
-            <td>Day 0: Initial Outreach</td>
-            <td>Today (Sent)</td>
-            <td>Quick thought regarding customer acquisition in Delhi</td>
-            <td><span class="badge badge-green">DELIVERED</span></td>
-          </tr>
-          <tr>
-            <td><strong>Aura Wellness</strong></td>
-            <td>Day 3: Creative Audit</td>
-            <td>In 2 days</td>
-            <td>3 ad creative observations for Aura Wellness</td>
-            <td><span class="badge badge-blue">SCHEDULED</span></td>
-          </tr>
-          <tr>
-            <td><strong>Zivame Hub</strong></td>
-            <td>Day 7: Competitor Angle</td>
-            <td>Paused</td>
-            <td>Competitor creative insights in your sector</td>
-            <td><span class="badge badge-amber">PAUSED (REPLY RECEIVED)</span></td>
-          </tr>
-        </tbody>
-      </table>
+  el.innerHTML = `
+    <div class="glass-card" style="margin-bottom:20px;">
+      <h2 style="font-size:18px; color:#fff; font-weight:700;">12 Specialized Autonomous AI Agents</h2>
+      <p style="font-size:12px; color:var(--text-secondary); margin-top:4px;">
+        Operating in coordination under Mayank Aggarwal's agency directives and approval boundaries.
+      </p>
     </div>
-  `;
-}
 
-// -------------------------------------------------------------
-// MODULE 14: AI AGENTS (12 SPECIALISTS)
-// -------------------------------------------------------------
-function renderAiAgents(el) {
-  const agents = state.agents || [];
-  el.innerHTML = `
-    <div class="card">
-      <div class="card-title">
-        <span>The 12 Specialized AI Agents</span>
-        <span class="badge badge-green">KLIKWISE AI Multi-Agent Network</span>
-      </div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
-        Coordinated workforce sharing central database records, customer context, and the approved KLIKWise rate card.
-      </p>
-
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
-        ${agents.map(a => `
-          <div class="card" style="background:#0B0F19; border:1px solid var(--border-color); display:flex; flex-direction:column; justify-content:space-between;">
-            <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <strong style="color:#fff; font-size:13px;">${a.name}</strong>
-                <span class="badge badge-blue">ONLINE</span>
-              </div>
-              <div style="font-size:11px; color:var(--accent-cyan); font-weight:600; margin-bottom:6px;">${a.role}</div>
-              <p style="font-size:11px; color:var(--text-muted); line-height:1.4;">${a.description}</p>
-            </div>
-            <button class="secondary-btn" style="margin-top:10px; font-size:11px;" onclick="navigateToModule('command_center')">Activate Agent →</button>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:24px;">
+      ${agents.map(a => `
+        <div class="glass-card" style="padding:16px; margin-bottom:0; display:flex; align-items:center; gap:12px;">
+          <div style="font-size:24px;">${a.icon}</div>
+          <div style="flex:1;">
+            <div style="font-size:13px; font-weight:700; color:#fff;">${a.name}</div>
+            <div style="font-size:11px; color:var(--cyan);">${a.role}</div>
           </div>
-        `).join('')}
-      </div>
+          <span class="system-status-pill" style="font-size:10px; padding:4px 8px;">${a.status}</span>
+        </div>
+      `).join('')}
     </div>
-  `;
-}
 
-// -------------------------------------------------------------
-// MODULE STUBS (REMAINING 8 MODULES)
-// -------------------------------------------------------------
-function renderLeadDiscovery(el) { navigateToModule('command_center'); }
-function renderLeadDatabase(el) {
-  el.innerHTML = `<div class="card"><div class="card-title">Lead Database</div><p style="font-size:12px; color:var(--text-muted);">Central repository of all discovered, qualified, and contacted business leads.</p></div>`;
-}
-function renderAiOutreach(el) { navigateToModule('command_center'); }
-function renderEmailCampaigns(el) {
-  el.innerHTML = `<div class="card"><div class="card-title">Email Outreach Campaigns</div><p style="font-size:12px; color:var(--text-muted);">Manage cold email delivery, SPF/DKIM verification, and open/reply rates.</p></div>`;
-}
-function renderConversationsInbox(el) {
-  el.innerHTML = `
-    <div class="card">
-      <div class="card-title">Omnichannel Conversations Inbox</div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Unified threads across Email, WhatsApp Business, and Web inquiries.</p>
-      <div class="card" style="background:#070B12; padding:14px;">
-        <strong style="font-size:13px; color:#fff;">DLF Real Estate Partner (Gurgaon)</strong><br>
-        <span style="font-size:11px; color:var(--text-muted);">WhatsApp: "Could you share details on your performance retainer and past real estate work?"</span><br>
-        <button class="action-btn" style="padding:4px 8px; font-size:11px; margin-top:8px;" onclick="navigateToModule('ai_sales_agent')">Open in AI Sales Agent</button>
-      </div>
-    </div>
-  `;
-}
-function renderAnalyticsReports(el) {
-  el.innerHTML = `<div class="card"><div class="card-title">Analytics & Client Performance Reports</div><p style="font-size:12px; color:var(--text-muted);">Real unit economics tracking: CAC, CPL, ROAS, and conversion quality.</p></div>`;
-}
-function renderIntegrations(el) {
-  el.innerHTML = `
-    <div class="card">
-      <div class="card-title">System Integrations</div>
-      <table class="data-table">
-        <thead><tr><th>Integration</th><th>Type</th><th>Status</th></tr></thead>
-        <tbody>
-          <tr><td>Google Maps / Places Platform</td><td>Lead Discovery</td><td><span class="badge badge-green">CONNECTED</span></td></tr>
-          <tr><td>Meta WhatsApp Cloud API</td><td>Business Messaging</td><td><span class="badge badge-blue">COEXISTENCE READY</span></td></tr>
-          <tr><td>Twenty CRM Engine</td><td>Customer Records</td><td><span class="badge badge-green">CONNECTED</span></td></tr>
-          <tr><td>Listmonk Outbound Mailer</td><td>Cold Email</td><td><span class="badge badge-green">CONNECTED</span></td></tr>
-          <tr><td>Documenso E-Signatures</td><td>SOW Proposals</td><td><span class="badge badge-green">CONNECTED</span></td></tr>
-          <tr><td>Cal.com Scheduling</td><td>Calendar Bookings</td><td><span class="badge badge-green">CONNECTED</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-function renderSettings(el) {
-  const p = state.profile || {};
-  el.innerHTML = `
-    <div class="card">
-      <div class="card-title">KLIKWise OS Settings & Operating Modes</div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Configure your operating parameters, founder details, and notification rules.</p>
-      <div style="display:flex; flex-direction:column; gap:12px; max-width:500px;">
-        <label style="font-size:12px; color:var(--text-faint);">Founder & Lead</label>
-        <input type="text" class="search-bar" style="width:100%;" value="${p.business?.contact_name || 'Mayank Aggarwal'}" readonly>
-        <label style="font-size:12px; color:var(--text-faint);">Official Business Phone</label>
-        <input type="text" class="search-bar" style="width:100%;" value="${p.business?.phone || '+91 9217756033'}" readonly>
-        <label style="font-size:12px; color:var(--text-faint);">Official Business Email</label>
-        <input type="text" class="search-bar" style="width:100%;" value="${p.business?.contact_email || 'riyansh.studio007@gmail.com'}" readonly>
+    <!-- Live Audit Logs Table -->
+    <div class="glass-card">
+      <h3 style="font-size:15px; color:#fff; font-weight:700; margin-bottom:12px;">
+        🛡️ Live Security Audit & Execution Trail
+      </h3>
+      <div style="max-height:260px; overflow-y:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px; font-family:var(--font-mono);">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-subtle); color:var(--text-muted); text-align:left;">
+              <th style="padding:8px;">Timestamp</th>
+              <th style="padding:8px;">Actor</th>
+              <th style="padding:8px;">Action</th>
+              <th style="padding:8px;">Resource</th>
+              <th style="padding:8px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(state.auditLogs || []).slice(0, 15).map(l => `
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                <td style="padding:8px; color:var(--text-muted);">${new Date(l.timestamp).toLocaleTimeString()}</td>
+                <td style="padding:8px; color:var(--cyan);">${l.actor}</td>
+                <td style="padding:8px; color:#fff;">${l.action}</td>
+                <td style="padding:8px; color:var(--text-secondary);">${l.resource}</td>
+                <td style="padding:8px; color:var(--green); font-weight:700;">${l.status}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
       </div>
     </div>
   `;

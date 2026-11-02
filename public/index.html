@@ -4,90 +4,168 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KLIKWise OS — Agency Growth & Autonomous Sales Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div id="app">
-    <!-- Collapsible Sidebar with 17 Master Modules -->
-    <aside class="sidebar">
+    <!-- Sleek Futuristic Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Brand Header -->
       <div class="sidebar-header">
-        <div class="logo-badge">KW</div>
-        <div class="logo-text">
-          <h1>KLIKWise OS</h1>
-          <span>Growth Command Center</span>
+        <div class="logo-wrapper">
+          <div class="logo-badge">KW</div>
+          <div class="logo-text">
+            <h2>KLIKWise OS</h2>
+            <span class="sub-badge">v2.0 • AI GROWTH ENGINE</span>
+          </div>
         </div>
       </div>
 
+      <!-- Operating Mode Card -->
+      <div class="mode-card">
+        <div class="mode-header">
+          <span class="pulse-dot"></span>
+          <span class="mode-label">OPERATING MODE</span>
+        </div>
+        <select id="mode-select" class="mode-select" onchange="changeOperatingMode(this.value)">
+          <option value="APPROVAL_MODE">🛡️ Approval Mode (Safe)</option>
+          <option value="RESEARCH_MODE">🔍 Research Mode (Read-Only)</option>
+          <option value="CONTROLLED_AUTOMATION">⚡ Controlled Automation</option>
+        </select>
+        <div class="mode-desc" id="mode-desc">Human review required before sending any outreach.</div>
+      </div>
+
+      <!-- Simplified 5 Master Navigation Hubs -->
       <nav class="sidebar-nav">
-        <div class="nav-section-title">Operations & Growth</div>
-        <a class="nav-item active" data-module="overview_dashboard">📊 1. Overview Dashboard</a>
-        <a class="nav-item" data-module="command_center" style="color:var(--accent-cyan); font-weight:700;">⚡ 2. AI Command Center</a>
-        <a class="nav-item" data-module="lead_discovery">📍 3. Lead Discovery</a>
-        <a class="nav-item" data-module="lead_database">🗄️ 4. Lead Database</a>
-        <a class="nav-item" data-module="ai_outreach">✉️ 5. AI Outreach</a>
-        <a class="nav-item" data-module="whatsapp_manager">💬 6. WhatsApp Manager</a>
-        <a class="nav-item" data-module="email_campaigns">📧 7. Email Campaigns</a>
+        <div class="nav-category">CORE WORKSPACES</div>
+        
+        <button class="nav-item active" data-tab="command_center" onclick="switchTab('command_center')">
+          <span class="nav-icon">⚡</span>
+          <div class="nav-info">
+            <span class="nav-title">Command Center</span>
+            <span class="nav-sub">AI Search & Growth Engine</span>
+          </div>
+        </button>
 
-        <div class="nav-section-title">Sales & Deal Closing</div>
-        <a class="nav-item" data-module="ai_sales_agent">🤖 8. AI Sales Agent</a>
-        <a class="nav-item" data-module="conversations_inbox">📥 9. Conversations Inbox</a>
-        <a class="nav-item" data-module="crm_pipeline">📈 10. CRM Pipeline</a>
-        <a class="nav-item" data-module="proposals">📝 11. Proposals & Quotations</a>
-        <a class="nav-item" data-module="pricing_services">🏷️ 12. Pricing & Services</a>
-        <a class="nav-item" data-module="followup_manager">⏱️ 13. Follow-up Manager</a>
+        <button class="nav-item" data-tab="ai_sales" onclick="switchTab('ai_sales')">
+          <span class="nav-icon">💬</span>
+          <div class="nav-info">
+            <span class="nav-title">AI Sales & WhatsApp</span>
+            <span class="nav-sub">Interactive Agent & Inbox</span>
+          </div>
+        </button>
 
-        <div class="nav-section-title">Workforce & Governance</div>
-        <a class="nav-item" data-module="ai_agents">👥 14. AI Agents (12 Specialists)</a>
-        <a class="nav-item" data-module="analytics_reports">📊 15. Analytics & Reports</a>
-        <a class="nav-item" data-module="integrations">🔌 16. Integrations</a>
-        <a class="nav-item" data-module="settings">⚙️ 17. Settings & Mode</a>
+        <button class="nav-item" data-tab="crm_pipeline" onclick="switchTab('crm_pipeline')">
+          <span class="nav-icon">🎯</span>
+          <div class="nav-info">
+            <span class="nav-title">Leads & CRM</span>
+            <span class="nav-sub">Visual Pipeline & Deals</span>
+          </div>
+        </button>
+
+        <button class="nav-item" data-tab="proposals_pricing" onclick="switchTab('proposals_pricing')">
+          <span class="nav-icon">📝</span>
+          <div class="nav-info">
+            <span class="nav-title">Proposals & Pricing</span>
+            <span class="nav-sub">INR Catalogue & SOW Generator</span>
+          </div>
+        </button>
+
+        <div class="nav-category" style="margin-top:16px;">GOVERNANCE & SYSTEM</div>
+
+        <button class="nav-item" data-tab="agents_system" onclick="switchTab('agents_system')">
+          <span class="nav-icon">⚙️</span>
+          <div class="nav-info">
+            <span class="nav-title">AI Workforce & Status</span>
+            <span class="nav-sub">12 Agents, Tools & Audit Logs</span>
+          </div>
+        </button>
       </nav>
 
-      <!-- Founder Quick Identity Footer -->
-      <div style="padding:14px 18px; border-top:1px solid var(--border-color); font-size:11px; color:var(--text-faint);">
-        <div>👑 <strong style="color:var(--text-main);">Mayank Aggarwal</strong></div>
-        <div style="color:var(--accent-cyan);">Co-Founder & AI Creative Head</div>
-        <div style="margin-top:4px;">📞 +91 9217756033</div>
+      <!-- Founder Quick Identity Card -->
+      <div class="founder-card">
+        <div class="founder-avatar">MA</div>
+        <div class="founder-meta">
+          <div class="founder-name">Mayank Aggarwal</div>
+          <div class="founder-title">Co-Founder & AI Creative Head</div>
+          <div class="founder-contact">📞 +91 9217756033</div>
+        </div>
+        <a href="https://drive.google.com/drive/folders/1IBXhPfcEE4f9UksKn1_1REIqyGCT4wqK" target="_blank" class="portfolio-btn" title="View Portfolio on Google Drive">
+          📁
+        </a>
       </div>
     </aside>
 
     <!-- Main Content Area -->
     <main class="main-wrapper">
-      <!-- Top Navigation Bar with Operating Mode Selector -->
+      <!-- Modern Topbar -->
       <header class="topbar">
         <div class="topbar-left">
-          <div class="breadcrumbs">
-            <span>KLIKWise OS</span>
-            <span>/</span>
-            <span class="current" id="breadcrumb-current">Overview Dashboard</span>
-          </div>
-          <div class="search-bar">
-            <span>🔍</span>
-            <input type="text" id="global-search" placeholder="Type command or search leads... (⌘K)">
+          <div class="tab-indicator">
+            <span class="tab-crumb">KLIKWise OS</span>
+            <span class="crumb-sep">/</span>
+            <span class="tab-current" id="current-tab-title">⚡ AI Command Center</span>
           </div>
         </div>
 
         <div class="topbar-right">
-          <!-- Mode Selector Pill -->
-          <div style="display:flex; align-items:center; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:6px; padding:4px 8px; font-size:12px;">
-            <span style="color:var(--text-faint); margin-right:6px;">Mode:</span>
-            <select id="mode-select" style="background:transparent; border:none; color:var(--accent-cyan); font-weight:600; outline:none; cursor:pointer;" onchange="changeOperatingMode(this.value)">
-              <option value="APPROVAL_MODE" style="background:#0D131F;">Approval Mode (Default)</option>
-              <option value="RESEARCH_MODE" style="background:#0D131F;">Research Mode (No Send)</option>
-              <option value="CONTROLLED_AUTOMATION" style="background:#0D131F;">Controlled Automation</option>
-            </select>
+          <!-- Live Status Indicator -->
+          <div class="system-status-pill">
+            <span class="pulse-dot green"></span>
+            <span>All 12 Agents Online</span>
           </div>
 
-          <button class="secondary-btn" style="border-color:var(--accent-red); color:var(--accent-red);" onclick="emergencyPause()">⏸️ Pause All Agents</button>
-          <button class="action-btn" onclick="navigateToModule('command_center')">⚡ Open Command Center</button>
+          <!-- Quick Demo Execution Button -->
+          <button class="btn-demo" onclick="runQuickDemo()">
+            ▶️ Quick 1-Click Demo
+          </button>
+
+          <!-- Emergency Kill Switch -->
+          <button class="btn-emergency" onclick="emergencyPause()">
+            ⏸️ Pause All Agents
+          </button>
         </div>
       </header>
 
       <!-- Dynamic Page Container -->
       <section class="page-container" id="page-content">
-        <!-- Injected dynamically by app.js -->
+        <!-- Content dynamically rendered by app.js -->
       </section>
     </main>
+  </div>
+
+  <!-- Shared Pitch Preview Modal -->
+  <div id="pitch-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this) closePitchModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 id="modal-business-name" style="color:#fff; font-size:18px;">Pitch Preview</h3>
+          <span id="modal-lead-score" class="badge-pill">Lead Score: 95/100</span>
+        </div>
+        <button class="modal-close" onclick="closePitchModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="pitch-meta-row">
+          <div><strong>Recipient:</strong> <span id="modal-recipient" style="color:var(--cyan);">contact@brand.com</span></div>
+          <div><strong>Recommended Service:</strong> <span id="modal-service" style="color:var(--purple);">Performance Marketing</span></div>
+        </div>
+        <div class="pitch-subject-box">
+          <label>Subject Line:</label>
+          <div id="modal-subject" class="subject-text">Growth Strategy for Your Brand</div>
+        </div>
+        <div class="pitch-body-box">
+          <label>Personalized AI Outreach Pitch:</label>
+          <div id="modal-body-text" class="body-text"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closePitchModal()">Close</button>
+        <button class="btn-primary" onclick="alert('Pitch approved and scheduled for dispatch via Listmonk!')">Approve & Send Pitch ✉️</button>
+      </div>
+    </div>
   </div>
 
   <script src="/app.js"></script>
