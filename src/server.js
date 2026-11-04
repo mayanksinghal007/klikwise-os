@@ -8,6 +8,7 @@ const toolRegistry = require('./lib/toolSdk');
 const multiAgentCenter = require('./agent/multiAgentCenter');
 const workflowEngine = require('./workflows/workflowEngine');
 const security = require('./lib/security');
+const aiProvider = require('./agent/aiProvider');
 const onboardingWizard = require('./onboardingWizard');
 const salesAgent = require('./agent/salesAgent');
 const commandCenter = require('./agent/commandCenterOrchestrator');
@@ -112,11 +113,7 @@ async function handleRequest(req, res) {
           workflows,
           activeSequences,
           auditLogs,
-          leads: [
-            { id: 'l1', businessName: 'Zivame Fashion Hub', category: "D2C Women's Fashion", website: 'https://zivame.example.com', phone: '+91 9811122334', leadScore: 94, crmStage: 'QUALIFIED' },
-            { id: 'l2', businessName: 'Nykaa Luxe Delhi', category: 'Beauty & Cosmetics', website: 'https://nykaa.example.com', phone: '+91 9811133445', leadScore: 92, crmStage: 'OUTREACH_READY' },
-            { id: 'l3', businessName: 'DLF Luxury Estates', category: 'Real Estate', website: 'https://dlf.example.com', phone: '+91 9811144556', leadScore: 88, crmStage: 'PROPOSAL_SENT' }
-          ]
+          leads: commandCenter.loadCrmLeads()
         });
       }
 
@@ -300,6 +297,49 @@ async function handleRequest(req, res) {
         const target = body.to || emailDispatcher.senderEmail;
         const result = await emailDispatcher.sendTestEmail(target);
         return sendJson(res, 200, result);
+      }
+
+      // Dispatch single email directly to a lead
+      if (pathname === '/api/email/dispatch-single' && req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const result = await emailDispatcher.sendEmail({
+          to: body.email,
+          subject: body.subject || `Quick question regarding ${body.businessName}`,
+          text: body.body || '',
+          html: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;"><p>${(body.body || '').replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p></div>`,
+          leadName: body.businessName,
+          campaignId: body.campaignId || 'MANUAL'
+        });
+
+        // Update lead in CRM
+        const crmLeads = commandCenter.loadCrmLeads();
+        const updated = crmLeads.map(l => l.id === body.leadId ? { ...l, crmStage: 'PROPOSAL_SENT', approvalStatus: 'APPROVED' } : l);
+        commandCenter.saveCrmLeads(updated);
+
+        return sendJson(res, 200, { success: true, result, leadId: body.leadId });
+      }
+
+      // CRM Leads endpoint
+      if (pathname === '/api/crm/leads' && req.method === 'GET') {
+        return sendJson(res, 200, { leads: commandCenter.loadCrmLeads() });
+      }
+
+      // AI Settings configuration
+      if (pathname === '/api/settings/ai' && req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        if (body.geminiKey) {
+          process.env.GEMINI_API_KEY = body.geminiKey.trim();
+          aiProvider.geminiKey = body.geminiKey.trim();
+        }
+        if (body.openaiKey) {
+          process.env.OPENAI_API_KEY = body.openaiKey.trim();
+          aiProvider.openaiKey = body.openaiKey.trim();
+        }
+        return sendJson(res, 200, {
+          success: true,
+          hasCustomKey: aiProvider.hasCustomKey(),
+          message: 'AI Provider settings updated.'
+        });
       }
 
       // 7. Follow-Up Manager

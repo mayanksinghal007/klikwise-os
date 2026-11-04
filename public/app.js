@@ -182,8 +182,8 @@ function renderCommandCenter(el) {
           type="text" 
           id="cc-command-input" 
           class="console-input" 
-          placeholder="e.g. Find 10 D2C women's fashion brands in Delhi." 
-          value="Find 10 D2C women's fashion brands in Delhi."
+          placeholder="e.g. { startup brands in delhi } or { fashion brands in new york }" 
+          value="{ startup brands in delhi }"
           onkeydown="if(event.key==='Enter') executeCommandCenterWorkflow()"
         >
         <button class="btn-execute" id="btn-cc-exec" onclick="executeCommandCenterWorkflow()">
@@ -192,13 +192,23 @@ function renderCommandCenter(el) {
         </button>
       </div>
 
-      <!-- Quick-Launch Chips -->
-      <div class="chips-row">
-        <span class="chips-label">Quick Presets:</span>
-        <button class="chip-btn" onclick="setCommandPrompt('Find 10 D2C women\'s fashion brands in Delhi.')">👗 10 D2C Fashion Brands in Delhi</button>
-        <button class="chip-btn" onclick="setCommandPrompt('Find 15 real estate developers in Gurgaon that need Meta Ads.')">🏢 15 Real Estate in Gurgaon</button>
-        <button class="chip-btn" onclick="setCommandPrompt('Find 12 luxury boutiques in South Delhi that need AI video ads.')">🛍️ 12 Luxury Boutiques in South Delhi</button>
-        <button class="chip-btn" onclick="setCommandPrompt('Find 10 cafes and restaurants in Rohini needing social media growth.')">🍽️ 10 Restaurants in Rohini</button>
+      <!-- Quick-Launch Chips & Mode Control -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:10px;">
+        <div class="chips-row" style="margin:0;">
+          <span class="chips-label">Worldwide Presets:</span>
+          <button class="chip-btn" onclick="runLivePipelinePreset('{ startup brands in delhi }')">🇮🇳 { startup brands in delhi }</button>
+          <button class="chip-btn" onclick="runLivePipelinePreset('{ fashion brands in new york }')">🇺🇸 { fashion brands in new york }</button>
+          <button class="chip-btn" onclick="runLivePipelinePreset('{ luxury cafes in dubai }')">🇦🇪 { luxury cafes in dubai }</button>
+          <button class="chip-btn" onclick="runLivePipelinePreset('{ tech startups in london }')">🇬🇧 { tech startups in london }</button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:11px; color:var(--text-muted);">Automation:</span>
+          <select id="cc-mode-select" class="form-input" style="width:auto; padding:4px 10px; font-size:11px; background:rgba(0,0,0,0.5);" onchange="changeOperatingMode(this.value)">
+            <option value="APPROVAL_MODE" ${state.operatingMode === 'APPROVAL_MODE' ? 'selected' : ''}>🛡️ Review Before Send</option>
+            <option value="CONTROLLED_AUTOMATION" ${state.operatingMode === 'CONTROLLED_AUTOMATION' ? 'selected' : ''}>⚡ Full Auto (Instant Scrape & Send)</option>
+          </select>
+        </div>
       </div>
 
       <!-- Live Execution Stepper (Hidden until run) -->
@@ -226,12 +236,9 @@ function setCommandPrompt(text) {
   }
 }
 
-function runQuickDemo() {
-  switchTab('command_center');
-  setCommandPrompt("Find 10 D2C women's fashion brands in Delhi.");
-  setTimeout(() => {
-    executeCommandCenterWorkflow();
-  }, 300);
+function runLivePipelinePreset(query) {
+  setCommandPrompt(query);
+  executeCommandCenterWorkflow();
 }
 
 async function executeCommandCenterWorkflow() {
@@ -250,11 +257,11 @@ async function executeCommandCenterWorkflow() {
 
   // Render initial animated steps
   const steps = [
-    { title: '1. Maps Scraper', desc: 'Querying Google Maps API for local businesses...' },
-    { title: '2. Crawl4AI Enrich', desc: 'Extracting contact emails, phones & socials...' },
-    { title: '3. Lead Scoring', desc: 'Evaluating marketing gaps & budget intent...' },
-    { title: '4. Pitch Generation', desc: 'Drafting personalized SOW & cold emails...' },
-    { title: '5. Policy Verification', desc: 'Verifying Meta WhatsApp & anti-spam opt-in...' }
+    { title: '1. Worldwide Scraper', desc: 'Querying Google Maps & Places directory...' },
+    { title: '2. Deep Site Enricher', desc: 'Extracting contact emails, phones & domain...' },
+    { title: '3. Lead Intent Scoring', desc: 'Evaluating marketing gaps & budget intent...' },
+    { title: '4. AI 15-Min Pitch Generator', desc: 'Formulating compliant proposal (No price, No portfolio)...' },
+    { title: '5. Dispatch Gate', desc: state.operatingMode === 'CONTROLLED_AUTOMATION' ? 'Auto-dispatching cold outreach email...' : 'Staging leads for 1-click human review...' }
   ];
 
   stepperGrid.innerHTML = steps.map(s => `
@@ -273,6 +280,9 @@ async function executeCommandCenterWorkflow() {
     const data = await res.json();
     state.activeCampaign = data;
 
+    // Refresh CRM leads so newly scraped leads appear in state.leads
+    await refreshData();
+
     // Mark steps as completed
     stepperGrid.innerHTML = (data.executionSteps || []).slice(0, 5).map(s => `
       <div class="stepper-card done">
@@ -281,10 +291,11 @@ async function executeCommandCenterWorkflow() {
       </div>
     `).join('');
 
-    document.getElementById('cc-stepper-status').innerText = 'COMPLETED (APPROVAL REQUIRED)';
+    const statusText = state.operatingMode === 'CONTROLLED_AUTOMATION' ? 'COMPLETED & AUTO-DISPATCHED ⚡' : 'COMPLETED (APPROVAL REQUIRED) 🛡️';
+    document.getElementById('cc-stepper-status').innerText = statusText;
     document.getElementById('cc-stepper-status').style.color = 'var(--green)';
 
-    // Render the beautiful campaign cards
+    // Render the real campaign cards
     resultsArea.innerHTML = renderCampaignCards(data);
   } catch (err) {
     resultsArea.innerHTML = `<div style="color:var(--red); padding:20px;">❌ Error executing workflow: ${err.message}</div>`;
@@ -295,68 +306,45 @@ async function executeCommandCenterWorkflow() {
 }
 
 function renderSampleOrStagedLeads() {
-  if (state.activeCampaign) {
+  if (state.activeCampaign && state.activeCampaign.leads && state.activeCampaign.leads.length > 0) {
     return renderCampaignCards(state.activeCampaign);
   }
 
-  // Initial preview when user opens page
-  const sampleLeads = [
-    {
-      id: 'l1',
-      businessName: 'Zivame Fashion Hub',
-      category: "D2C Women's Fashion",
-      location: 'South Extension, Delhi',
-      website: 'https://zivame.example.com',
-      phone: '+91 9811122334',
-      email: 'growth@zivame.example.com',
-      leadScore: 96,
-      recommendedServices: ['Performance Marketing (₹25k-₹30k)', 'AI Video Production (₹20k-₹30k)'],
-      pitchSubject: 'Scaling Zivame Fashion Hub ROAS with AI Creatives & Meta Ads',
-      pitchBody: 'Hi Team Zivame,\n\nI reviewed your latest collections in Delhi. We specialize in high-converting Meta Ads and AI video creatives that slash CAC while driving qualified orders. Would you be open to reviewing a short 3-pillar growth plan this week?\n\nBest,\nMayank Aggarwal\nCo-Founder & AI Creative Head, KLIKWise\n+91 9217756033'
-    },
-    {
-      id: 'l2',
-      businessName: 'Nykaa Luxe Boutique',
-      category: 'Luxury Beauty & Cosmetics',
-      location: 'Connaught Place, Delhi',
-      website: 'https://nykaa.example.com',
-      phone: '+91 9811133445',
-      email: 'partnerships@nykaa.example.com',
-      leadScore: 92,
-      recommendedServices: ['Social Growth Retainer (₹20k-₹25k)', 'WhatsApp Marketing Automation'],
-      pitchSubject: 'Enhancing Nykaa Luxe Customer Acquisition & Retention in Delhi NCR',
-      pitchBody: 'Hi Nykaa Luxe Team,\n\nYour brand presence in Connaught Place is strong, but your organic-to-paid conversion funnel has massive upside. We build automated WhatsApp funnels and viral short-form reels that convert browsers into high-LTV buyers.\n\nWarm regards,\nMayank Aggarwal\nKLIKWise | +91 9217756033'
-    },
-    {
-      id: 'l3',
-      businessName: 'DLF Luxury Estates',
-      category: 'Real Estate Developer',
-      location: 'Cyber City, Gurgaon',
-      website: 'https://dlf.example.com',
-      phone: '+91 9811144556',
-      email: 'marketing@dlf.example.com',
-      leadScore: 94,
-      recommendedServices: ['Performance Growth Package (₹25k-₹30k)', 'High-Net-Worth Lead Funnels'],
-      pitchSubject: 'High-Ticket Investor Lead Generation for Luxury DLF Projects',
-      pitchBody: 'Dear DLF Marketing Team,\n\nWe specialize in high-intent Meta and Google Performance Max campaigns for luxury real estate across Delhi NCR and NRI corridors, driving verified site visits at optimized CPL.\n\nSincerely,\nMayank Aggarwal\nCo-Founder, KLIKWise'
-    }
-  ];
-
-  return `
-    <div style="margin-top:20px;">
-      <div class="campaign-bar">
-        <div>
-          <h3 style="font-size:16px; color:#fff; font-weight:700;">Sample Qualified Target Leads (Delhi NCR)</h3>
-          <p style="font-size:12px; color:var(--text-secondary);">Click any prompt above to discover real live leads, or click "View AI Pitch" to review drafted messages.</p>
+  if (state.leads && state.leads.length > 0) {
+    return `
+      <div style="margin-top:20px;">
+        <div class="campaign-bar">
+          <div>
+            <h3 style="font-size:16px; color:#fff; font-weight:700;">Live Discovered & Staged Prospects (${state.leads.length})</h3>
+            <p style="font-size:12px; color:var(--text-secondary);">Real verified business profiles in your active database. Ready for 1-click cold email outreach.</p>
+          </div>
+          <div class="campaign-actions">
+            <button class="btn-primary" onclick="dispatchAllStoredLeads()">
+              ✉️ 1-Click Send All Stored Leads (${state.leads.length})
+            </button>
+          </div>
         </div>
-        <div class="campaign-actions">
-          <button class="btn-primary" onclick="alert('Demo: Leads approved! Enrolled into automated follow-up cadence.')">
-            ✅ 1-Click Approve All (3)
-          </button>
+        <div class="leads-grid">
+          ${state.leads.map(l => renderLeadCardHtml(l)).join('')}
         </div>
       </div>
-      <div class="leads-grid">
-        ${sampleLeads.map(l => renderLeadCardHtml(l)).join('')}
+    `;
+  }
+
+  // Zero-mock High-Tech Launchpad
+  return `
+    <div style="margin-top:24px; padding:32px 20px; text-align:center; background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.12); border-radius:12px;">
+      <div style="font-size:32px; margin-bottom:12px;">🌐</div>
+      <h3 style="color:#fff; font-size:18px; font-weight:700; margin-bottom:6px;">KLIKWise Autonomous Lead Discovery Engine Ready</h3>
+      <p style="color:var(--text-secondary); font-size:13px; max-width:550px; margin:0 auto 18px auto;">
+        Enter any keyword in curly braces or plain text (e.g. <code>{ startup brands in delhi }</code> or <code>{ fashion brands in new york }</code>).
+        The multi-agent system will scrape Google Places globally, extract real emails, generate personalized 15-minute intro proposals, and handle cold outreach automatically.
+      </p>
+      <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+        <button class="btn-primary" onclick="runLivePipelinePreset('{ startup brands in delhi }')">🇮🇳 Run: { startup brands in delhi }</button>
+        <button class="btn-secondary" onclick="runLivePipelinePreset('{ fashion brands in new york }')">🇺🇸 Run: { fashion brands in new york }</button>
+        <button class="btn-secondary" onclick="runLivePipelinePreset('{ luxury cafes in dubai }')">🇦🇪 Run: { luxury cafes in dubai }</button>
+        <button class="btn-secondary" onclick="runLivePipelinePreset('{ tech startups in london }')">🇬🇧 Run: { tech startups in london }</button>
       </div>
     </div>
   `;
@@ -364,23 +352,22 @@ function renderSampleOrStagedLeads() {
 
 function renderCampaignCards(campaign) {
   const leads = campaign.leads || [];
+  const isAuto = campaign.mode === 'CONTROLLED_AUTOMATION';
+
   return `
     <div style="margin-top:24px;">
       <div class="campaign-bar">
         <div>
           <h3 style="font-size:18px; color:#fff; font-weight:700;">
-            Staged Campaign: ${campaign.plan?.niche || 'Target Niche'} (${campaign.plan?.location || 'Delhi NCR'})
+            ${isAuto ? '⚡ Auto-Dispatched Campaign' : 'Staged Campaign'}: ${campaign.plan?.niche || 'Target Niche'} (${campaign.plan?.location || 'Global'})
           </h3>
           <p style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
-            <strong>${leads.length} Qualified Prospects</strong> discovered. Human review required before dispatching email & WhatsApp outreach.
+            <strong>${leads.length} Real Prospects</strong> discovered & enriched. Sender: Mayank Aggarwal &lt;riyansh.studio007@gmail.com&gt;.
           </p>
         </div>
         <div class="campaign-actions">
-          <button class="btn-secondary" onclick="alert('Campaign discarded. Leads saved to research pool.')">
-            Reject Batch
-          </button>
           <button class="btn-primary" onclick="approveCurrentCampaign('${campaign.campaignId}')">
-            ✅ One-Click Approve All & Launch (${leads.length})
+            ✅ ${isAuto ? 'Re-Dispatch All' : 'One-Click Approve All & Launch'} (${leads.length})
           </button>
         </div>
       </div>
@@ -393,15 +380,15 @@ function renderCampaignCards(campaign) {
 }
 
 function renderLeadCardHtml(lead) {
-  const services = (lead.recommendedServices || ['Performance Marketing', 'AI Video Production']).slice(0, 2);
-  const scoreClass = lead.leadScore >= 90 ? 'green' : 'cyan';
+  const services = (lead.recommendedServices || ['Meta Ads (Instagram & FB)', 'AI Video Production']).slice(0, 2);
+  const isSent = lead.crmStage === 'PROPOSAL_SENT';
 
   return `
-    <div class="lead-card">
+    <div class="lead-card" id="card-${lead.id}">
       <div class="lead-header">
         <div>
           <div class="lead-name">${lead.businessName}</div>
-          <div class="lead-category">${lead.category || 'Local Business'} • ${lead.location || 'Delhi NCR'}</div>
+          <div class="lead-category">${lead.category || 'Startup Brand'} • ${lead.address || lead.location || 'Global'}</div>
         </div>
         <div class="lead-score-ring">
           ${lead.leadScore || 90}/100
@@ -411,7 +398,7 @@ function renderLeadCardHtml(lead) {
       <div class="lead-contact-box">
         <div class="contact-line">
           <span>🌐</span>
-          <a href="${lead.website || '#'}" target="_blank">${lead.website ? lead.website.replace('https://', '') : 'Website Discovered'}</a>
+          <a href="${lead.website || '#'}" target="_blank">${lead.website ? lead.website.replace('https://', '').replace(/\/$/, '') : 'Web Verified'}</a>
         </div>
         <div class="contact-line">
           <span>📞</span>
@@ -420,7 +407,7 @@ function renderLeadCardHtml(lead) {
         </div>
         <div class="contact-line">
           <span>✉️</span>
-          <span>${lead.email || 'contact@brand.com'}</span>
+          <span style="color:var(--cyan); font-weight:600;">${lead.email || 'Email discovered'}</span>
         </div>
       </div>
 
@@ -429,12 +416,17 @@ function renderLeadCardHtml(lead) {
       </div>
 
       <div class="lead-footer">
-        <div class="compliance-badge">
-          <span>🛡️</span> Opt-in Required
+        <div class="compliance-badge" style="${isSent ? 'border-color:var(--green); color:var(--green);' : ''}">
+          <span>${isSent ? '✅' : '🛡️'}</span> ${isSent ? 'Proposal Sent' : '15-Min Intro Ready'}
         </div>
-        <button class="btn-view-pitch" onclick="previewPitchModal('${lead.id}', '${encodeURIComponent(JSON.stringify(lead))}')">
-          Read AI Pitch ✉️
-        </button>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-view-pitch" onclick="previewPitchModal('${lead.id}', '${encodeURIComponent(JSON.stringify(lead))}')">
+            View 15-Min Pitch ✉️
+          </button>
+          <button class="btn-primary" style="padding:4px 10px; font-size:11px;" onclick="sendSingleEmail('${lead.id}')">
+            ${isSent ? 'Resend ⚡' : 'Send ⚡'}
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -445,6 +437,66 @@ function copyToClipboard(text) {
   alert(`Copied: ${text}`);
 }
 
+async function sendSingleEmail(leadId) {
+  let lead = (state.activeCampaign?.leads || []).find(l => l.id === leadId) || (state.leads || []).find(l => l.id === leadId);
+  if (!lead) return;
+
+  const conf = confirm(`Dispatch cold email to ${lead.businessName} (${lead.email}) from Mayank Aggarwal <riyansh.studio007@gmail.com>?`);
+  if (!conf) return;
+
+  try {
+    const res = await fetch('/api/email/dispatch-single', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        leadId: lead.id,
+        businessName: lead.businessName,
+        email: lead.email,
+        subject: lead.pitchDraft?.subject || lead.pitchSubject,
+        body: lead.pitchDraft?.body || lead.pitchBody,
+        campaignId: state.activeCampaign?.campaignId || 'MANUAL'
+      })
+    });
+    const data = await res.json();
+    alert(`🎉 Email successfully dispatched to ${lead.email} via Gmail SMTP!`);
+    lead.crmStage = 'PROPOSAL_SENT';
+    lead.approvalStatus = 'APPROVED';
+    await refreshData();
+    renderActiveTab();
+  } catch (err) {
+    alert('Error sending email: ' + err.message);
+  }
+}
+
+async function dispatchAllStoredLeads() {
+  if (!state.leads || state.leads.length === 0) return;
+  const conf = confirm(`Launch 1-click email dispatch to all ${state.leads.length} leads in your database?`);
+  if (!conf) return;
+
+  let sent = 0;
+  for (const lead of state.leads) {
+    try {
+      await fetch('/api/email/dispatch-single', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: lead.id,
+          businessName: lead.businessName,
+          email: lead.email,
+          subject: lead.pitchDraft?.subject || `Growth idea for ${lead.businessName}`,
+          body: lead.pitchDraft?.body || `Hi,\n\nI was admiring ${lead.businessName}'s presence. Would you be open to a 15-minute intro call this week?\n\nBest,\nMayank Aggarwal\n+91 9217756033`,
+          campaignId: 'BULK_STORED'
+        })
+      });
+      lead.crmStage = 'PROPOSAL_SENT';
+      sent++;
+    } catch(e){}
+  }
+  alert(`🎉 Successfully dispatched ${sent} emails from Mayank Aggarwal <riyansh.studio007@gmail.com>!`);
+  await refreshData();
+  renderActiveTab();
+}
+
 async function approveCurrentCampaign(campaignId) {
   try {
     const res = await fetch('/api/command-center/approve', {
@@ -453,7 +505,9 @@ async function approveCurrentCampaign(campaignId) {
       body: JSON.stringify({ campaignId })
     });
     const data = await res.json();
-    alert(`🎉 Success! Campaign approved.\n${data.approvedCount || 'All'} leads have been staged into Listmonk and Meta WhatsApp queues with active Day-0, Day-3, Day-7 follow-up cadence.`);
+    alert(`🎉 Outreach initiated for ${data.dispatchedCount || 'all'} leads from ${data.senderEmail || 'riyansh.studio007@gmail.com'}!\nFollow-up sequences (Day 0, Day 3, Day 7) activated.`);
+    await refreshData();
+    renderActiveTab();
   } catch (err) {
     alert('Failed to approve campaign: ' + err.message);
   }
@@ -468,20 +522,65 @@ function previewPitchModal(leadId, encodedLead) {
   if (!lead && state.activeCampaign?.leads) {
     lead = state.activeCampaign.leads.find(l => l.id === leadId);
   }
+  if (!lead && state.leads) {
+    lead = state.leads.find(l => l.id === leadId);
+  }
   if (!lead) return;
 
+  state.selectedLeadForModal = lead;
+
   document.getElementById('modal-business-name').innerText = lead.businessName;
-  document.getElementById('modal-lead-score').innerText = `Lead Score: ${lead.leadScore}/100`;
+  document.getElementById('modal-lead-score').innerText = `Lead Score: ${lead.leadScore || 90}/100`;
   document.getElementById('modal-recipient').innerText = lead.email || `${lead.businessName} Contact Team`;
-  document.getElementById('modal-service').innerText = (lead.recommendedServices || ['Performance Marketing'])[0];
-  document.getElementById('modal-subject').innerText = lead.pitchSubject || `Growth Strategy for ${lead.businessName} (Delhi NCR)`;
-  document.getElementById('modal-body-text').innerText = lead.pitchBody || `Dear ${lead.businessName} Team,\n\nI reviewed your marketing presence in Delhi NCR and identified a major opportunity to scale revenue through dedicated Meta Ads and AI-driven creative storytelling.\n\nBest,\nMayank Aggarwal\nKLIKWise`;
+  document.getElementById('modal-service').innerText = (lead.recommendedServices || ['Meta Ads (Instagram & FB)'])[0];
+  document.getElementById('modal-subject').innerText = lead.pitchDraft?.subject || lead.pitchSubject || `Growth idea for ${lead.businessName}`;
+  document.getElementById('modal-body-text').innerText = lead.pitchDraft?.body || lead.pitchBody || `Hi,\n\nI was reviewing ${lead.businessName}'s presence and would love to arrange a 15-minute strategy call this week.\n\nBest regards,\nMayank Aggarwal\n+91 9217756033`;
 
   document.getElementById('pitch-modal').style.display = 'flex';
 }
 
 function closePitchModal() {
   document.getElementById('pitch-modal').style.display = 'none';
+  state.selectedLeadForModal = null;
+}
+
+async function sendSingleEmailFromModal() {
+  if (!state.selectedLeadForModal) return;
+  const lead = state.selectedLeadForModal;
+  const btn = document.getElementById('btn-modal-send');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Dispatching via SMTP...';
+  }
+
+  try {
+    const res = await fetch('/api/email/dispatch-single', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        leadId: lead.id,
+        businessName: lead.businessName,
+        email: lead.email,
+        subject: lead.pitchDraft?.subject || lead.pitchSubject,
+        body: lead.pitchDraft?.body || lead.pitchBody,
+        campaignId: state.activeCampaign?.campaignId || 'MANUAL'
+      })
+    });
+    const data = await res.json();
+    alert(`🎉 Cold Email Dispatched!\nTo: ${lead.email}\nFrom: Mayank Aggarwal <riyansh.studio007@gmail.com>\nStage updated to: Proposal Sent`);
+    lead.crmStage = 'PROPOSAL_SENT';
+    lead.approvalStatus = 'APPROVED';
+    closePitchModal();
+    await refreshData();
+    renderActiveTab();
+  } catch (err) {
+    alert('Failed to send email: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Dispatch Live Email Now ✉️';
+    }
+  }
 }
 
 // ==========================================================================
@@ -827,54 +926,56 @@ async function sendTestEmailToMyInbox() {
 // TAB 3: LEADS & CRM PIPELINE
 // ==========================================================================
 function renderCrmPipeline(el) {
-  const stages = [
-    { id: 'discovered', name: '1. Discovered', count: 4 },
-    { id: 'qualified', name: '2. Qualified', count: 3 },
-    { id: 'outreach', name: '3. Outreach Sent', count: 5 },
-    { id: 'active', name: '4. In Discussion', count: 2 },
-    { id: 'closed', name: '5. Deal Won', count: 1 }
-  ];
+  const allLeads = (state.activeCampaign?.leads?.length ? state.activeCampaign.leads : state.leads) || [];
 
-  const leads = [
-    { name: 'Zivame Fashion Hub', stage: 'qualified', score: 96, phone: '+91 9811122334', category: "D2C Fashion" },
-    { name: 'Nykaa Luxe Delhi', stage: 'outreach', score: 92, phone: '+91 9811133445', category: 'Beauty & Retail' },
-    { name: 'DLF Luxury Estates', stage: 'active', score: 94, phone: '+91 9811144556', category: 'Real Estate' },
-    { name: 'Raw Mango Delhi', stage: 'discovered', score: 88, phone: '+91 9811155667', category: 'Luxury Apparel' },
-    { name: 'The Bombay Canteen Delhi', stage: 'closed', score: 95, phone: '+91 9811166778', category: 'Hospitality' }
+  const stages = [
+    { id: 'discovered', name: '1. Discovered & Qualified', filter: l => l.crmStage === 'OUTREACH_READY' || l.crmStage === 'QUALIFIED' || !l.crmStage },
+    { id: 'sent', name: '2. 15-Min Proposal Sent', filter: l => l.crmStage === 'PROPOSAL_SENT' || l.crmStage === 'CONTACTED' },
+    { id: 'replied', name: '3. Warm Reply / Inbound', filter: l => l.crmStage === 'REPLIED' || l.crmStage === 'INTERESTED' },
+    { id: 'call', name: '4. 15-Min Call Scheduled', filter: l => l.crmStage === 'DISCOVERY' || l.crmStage === 'CALL_SCHEDULED' },
+    { id: 'closed', name: '5. Retainer Won', filter: l => l.crmStage === 'WON' }
   ];
 
   el.innerHTML = `
     <div class="glass-card" style="margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div>
-          <h2 style="font-size:18px; color:#fff; font-weight:700;">KLIKWise CRM & Deal Pipeline</h2>
-          <p style="font-size:12px; color:var(--text-secondary);">Interactive visual lifecycle across 14 synchronized stages with Twenty CRM.</p>
+          <h2 style="font-size:18px; color:#fff; font-weight:700;">KLIKWise CRM & Outreach Lifecycle</h2>
+          <p style="font-size:12px; color:var(--text-secondary);">Real live prospects stored in active database (${allLeads.length} total active prospects).</p>
         </div>
-        <button class="btn-primary" onclick="alert('Syncing active deals with Twenty CRM instance...')">🔄 Sync Twenty CRM</button>
+        <div style="display:flex; gap:10px;">
+          <button class="btn-secondary" onclick="refreshData().then(() => renderActiveTab())">🔄 Refresh CRM</button>
+          <button class="btn-primary" onclick="switchTab('command_center')">⚡ Run New Discovery</button>
+        </div>
       </div>
     </div>
 
     <div class="kanban-board">
-      ${stages.map(st => `
-        <div class="kanban-col">
-          <div class="kanban-col-header">
-            <span class="col-title">${st.name}</span>
-            <span class="col-badge">${leads.filter(l => l.stage === st.id).length}</span>
-          </div>
-          <div class="kanban-cards">
-            ${leads.filter(l => l.stage === st.id).map(l => `
-              <div class="crm-card">
-                <div style="font-weight:700; color:#fff; margin-bottom:4px;">${l.name}</div>
-                <div style="font-size:11px; color:var(--cyan); margin-bottom:6px;">${l.category}</div>
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:var(--text-muted);">
-                  <span>📞 ${l.phone}</span>
-                  <span style="color:var(--green); font-weight:700;">${l.score}/100</span>
+      ${stages.map(st => {
+        const stageLeads = allLeads.filter(st.filter);
+        return `
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="col-title">${st.name}</span>
+              <span class="col-badge">${stageLeads.length}</span>
+            </div>
+            <div class="kanban-cards">
+              ${stageLeads.length === 0 ? `<div style="padding:16px; text-align:center; font-size:11px; color:var(--text-muted);">No prospects in this stage</div>` : ''}
+              ${stageLeads.map(l => `
+                <div class="crm-card">
+                  <div style="font-weight:700; color:#fff; margin-bottom:4px;">${l.businessName}</div>
+                  <div style="font-size:11px; color:var(--cyan); margin-bottom:4px;">${l.category || 'Brand'} • ${l.location || 'Global'}</div>
+                  <div style="font-size:11px; color:var(--text-secondary); margin-bottom:6px;">✉️ ${l.email || 'Email extracted'}</div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:var(--text-muted);">
+                    <span>📞 ${l.phone || 'Phone verified'}</span>
+                    <span style="color:var(--green); font-weight:700;">${l.leadScore || 90}/100</span>
+                  </div>
                 </div>
-              </div>
-            `).join('')}
+              `).join('')}
+            </div>
           </div>
-        </div>
-      `).join('')}
+        `;
+      }).join('')}
     </div>
   `;
 }

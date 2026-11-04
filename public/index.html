@@ -118,9 +118,9 @@
             <span>All 12 Agents Online</span>
           </div>
 
-          <!-- Quick Demo Execution Button -->
-          <button class="btn-demo" onclick="runQuickDemo()">
-            ▶️ Quick 1-Click Demo
+          <!-- Quick Live Execution Button -->
+          <button class="btn-demo" onclick="runLivePipelinePreset('{ startup brands in delhi }')">
+            ⚡ Run Delhi Startups Discovery
           </button>
 
           <!-- Emergency Kill Switch -->
@@ -163,7 +163,9 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closePitchModal()">Close</button>
-        <button class="btn-primary" onclick="alert('Pitch approved and scheduled for dispatch via Listmonk!')">Approve & Send Pitch ✉️</button>
+        <button class="btn-primary" id="btn-modal-send" onclick="sendSingleEmailFromModal()">
+          Dispatch Live Email Now ✉️
+        </button>
       </div>
     </div>
   </div>
