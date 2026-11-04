@@ -19,5 +19,8 @@
     "sales-automation"
   ],
   "author": "KLIKWise",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "nodemailer": "^10.3.1"
+  }
 }

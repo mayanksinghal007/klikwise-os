@@ -298,29 +298,58 @@ class CommandCenterOrchestrator {
     campaign.status = 'APPROVED_BY_FOUNDER';
     campaign.approvedAt = new Date().toISOString();
     
-    // Mark approved leads
+    const emailDispatcher = require('../tools/emailDispatcher');
+    const followupCadence = require('../workflows/followupCadence');
+
+    let dispatchedCount = 0;
+    const dispatchResults = [];
+
+    // Mark and dispatch approved leads
     for (const lead of campaign.leads) {
       if (approvedLeadIds.length === 0 || approvedLeadIds.includes(lead.id)) {
         lead.approvalStatus = 'APPROVED';
         lead.crmStage = 'CONTACTED';
+
+        // 1. Dispatch cold email from riyansh.studio007@gmail.com asynchronously
+        const targetEmail = lead.email || (lead.allEmails && lead.allEmails[0]) || `contact@${(lead.website || 'brand').replace(/^https?:\/\//, '').replace(/\/.*$/, '')}`;
+        emailDispatcher.sendEmail({
+          to: targetEmail,
+          subject: lead.pitchDraft?.subject || `Growth Strategy for ${lead.businessName} (Delhi NCR)`,
+          text: lead.pitchDraft?.body || `Hi ${lead.businessName} Team,\n\nI reviewed your marketing presence in Delhi NCR. We help brands scale customer acquisition with high-converting Meta Ads and AI video production.\n\nBest,\nMayank Aggarwal\nKLIKWise | +91 9217756033`,
+          leadName: lead.businessName,
+          campaignId: campaign.campaignId
+        }).catch(e => console.warn('[EmailOutreach] Warning:', e.message));
+
+        dispatchResults.push({
+          business: lead.businessName,
+          email: targetEmail,
+          status: 'QUEUED'
+        });
+        dispatchedCount++;
+
+        // 2. Enroll into automated Day-3, Day-7 follow-up cadence
+        followupCadence.enrollLead(lead);
       } else {
         lead.approvalStatus = 'REJECTED';
       }
     }
 
     security.logAction({
-      action: 'CAMPAIGN_APPROVED',
+      action: 'CAMPAIGN_APPROVED_AND_DISPATCHED',
       actor: 'Mayank Aggarwal',
       resource: campaignId,
-      details: { approvedCount: campaign.leads.filter(l => l.approvalStatus === 'APPROVED').length },
+      details: { approvedCount: dispatchedCount, sender: emailDispatcher.senderEmail },
       status: 'APPROVED'
     });
 
     return {
       success: true,
       campaignId,
-      message: `Campaign approved! Outbound sequence launched for ${campaign.leads.filter(l => l.approvalStatus === 'APPROVED').length} leads.`,
-      dispatchedCount: campaign.leads.filter(l => l.approvalStatus === 'APPROVED').length
+      senderEmail: emailDispatcher.senderEmail,
+      smtpConfigured: emailDispatcher.isConfigured(),
+      dispatchedCount,
+      dispatchResults,
+      message: `🎉 Campaign Approved! Automated outreach initiated for ${dispatchedCount} leads from ${emailDispatcher.senderEmail}.`
     };
   }
 }

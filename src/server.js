@@ -13,6 +13,7 @@ const salesAgent = require('./agent/salesAgent');
 const commandCenter = require('./agent/commandCenterOrchestrator');
 const whatsappManager = require('./tools/whatsappManager');
 const followupCadence = require('./workflows/followupCadence');
+const emailDispatcher = require('./tools/emailDispatcher');
 
 const agent = new BusinessAgent();
 const PORT = process.env.PORT || 3300;
@@ -130,17 +131,7 @@ async function handleRequest(req, res) {
       // 3. Command Center: Human Approval Gate
       if (pathname === '/api/command-center/approve' && req.method === 'POST') {
         const body = await parseJsonBody(req);
-        const result = commandCenter.approveCampaign(body.campaignId, body.approvedLeadIds || []);
-        
-        // Also enroll approved leads into Follow-Up Cadence
-        const campaign = commandCenter.pendingCampaigns.get(body.campaignId);
-        if (campaign) {
-          for (const lead of campaign.leads) {
-            if (lead.approvalStatus === 'APPROVED') {
-              followupCadence.enrollLead(lead);
-            }
-          }
-        }
+        const result = await commandCenter.approveCampaign(body.campaignId, body.approvedLeadIds || []);
         return sendJson(res, 200, result);
       }
 
@@ -255,6 +246,59 @@ async function handleRequest(req, res) {
       if (pathname === '/api/whatsapp/webhook' && req.method === 'POST') {
         const body = await parseJsonBody(req);
         const result = await whatsappManager.processIncomingWebhook(body);
+        return sendJson(res, 200, result);
+      }
+
+      // Automated Cold Email & SMTP Dispatcher Endpoints
+      if (pathname === '/api/email/status' && req.method === 'GET') {
+        return sendJson(res, 200, {
+          senderEmail: emailDispatcher.senderEmail,
+          senderName: emailDispatcher.senderName,
+          isConfigured: emailDispatcher.isConfigured(),
+          smtpHost: emailDispatcher.smtpHost,
+          smtpPort: emailDispatcher.smtpPort,
+          outboxCount: emailDispatcher.outbox.length,
+          outbox: emailDispatcher.getOutbox(20)
+        });
+      }
+
+      if (pathname === '/api/email/config' && req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const configured = emailDispatcher.updateConfig({
+          senderEmail: body.senderEmail,
+          senderName: body.senderName,
+          smtpPass: body.smtpPass,
+          smtpHost: body.smtpHost,
+          smtpPort: body.smtpPort
+        });
+
+        try {
+          const envPath = path.resolve(__dirname, '../.env');
+          if (fs.existsSync(envPath)) {
+            let envContent = fs.readFileSync(envPath, 'utf8');
+            if (body.smtpPass) {
+              if (envContent.includes('GMAIL_APP_PASSWORD=')) {
+                envContent = envContent.replace(/GMAIL_APP_PASSWORD=.*/, `GMAIL_APP_PASSWORD=${body.smtpPass}`);
+              } else {
+                envContent += `\nGMAIL_APP_PASSWORD=${body.smtpPass}\n`;
+              }
+            }
+            fs.writeFileSync(envPath, envContent, 'utf8');
+          }
+        } catch (e) {}
+
+        return sendJson(res, 200, {
+          success: true,
+          configured,
+          senderEmail: emailDispatcher.senderEmail,
+          message: configured ? 'SMTP Email Dispatcher is LIVE!' : 'Email configuration saved.'
+        });
+      }
+
+      if (pathname === '/api/email/test-send' && req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const target = body.to || emailDispatcher.senderEmail;
+        const result = await emailDispatcher.sendTestEmail(target);
         return sendJson(res, 200, result);
       }
 

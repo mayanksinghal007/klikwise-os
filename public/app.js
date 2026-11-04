@@ -512,12 +512,14 @@ function renderAiSales(el) {
           `).join('')}
         </div>
 
-        <!-- Quick Question Prompts -->
+        <!-- Quick Question Prompts in Hindi & English -->
         <div style="padding:8px 20px; background:rgba(0,0,0,0.15); display:flex; flex-wrap:wrap; gap:6px;">
+          <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('Namaste! Mere paas boutique hai, mujhe sales badhani hai, kya plan hai?')">👗 Boutique Sales Kaise Badhayein?</button>
           <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('What are your Performance Marketing charges?')">💰 Performance Marketing Charges?</button>
           <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('Can you rank my website on Google with SEO?')">❌ Do you do SEO?</button>
-          <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('Where can I see your previous work / portfolio?')">📁 Show Portfolio</button>
-          <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('Can you give a 50% discount for a startup?')">🏷️ Can I get a 50% discount?</button>
+          <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('Previous work portfolio dikhao')">📁 Show Portfolio</button>
+          <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('Mayank se baat karni hai, number do')">📞 Contact Mayank</button>
+          <button class="chip-btn" style="font-size:11px;" onclick="sendPresetSalesQuestion('Kaise start karein? Process kya hai?')">🚀 Process Kya Hai?</button>
         </div>
 
         <!-- Chat Input Bar -->
@@ -526,7 +528,7 @@ function renderAiSales(el) {
             type="text" 
             id="sales-chat-input" 
             class="chat-input" 
-            placeholder="Type any client inquiry, objection, or question to test your AI sales rep..." 
+            placeholder="Type any inquiry in Hindi or English (e.g. 'Mere brand ki sales kaise badhegi?')..." 
             onkeydown="if(event.key==='Enter') sendSalesMessage()"
           >
           <button class="btn-execute" style="padding:0 20px; font-size:13px;" onclick="sendSalesMessage()">
@@ -535,8 +537,40 @@ function renderAiSales(el) {
         </div>
       </div>
 
-      <!-- Right: Meta WhatsApp Cloud API Connection & Coexistence Panel -->
+      <!-- Right: Meta WhatsApp & Email Automation Hub -->
       <div class="info-panel">
+        <!-- Automated Email Dispatcher Card -->
+        <div class="info-card" style="border: 1px solid var(--purple); background: rgba(139, 92, 246, 0.04);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h4 style="margin-bottom:0;"><span style="font-size:16px;">✉️</span> Cold Email Dispatcher</h4>
+            <span class="system-status-pill" id="email-connection-pill" style="font-size:10px; padding:3px 8px; color:var(--purple); border-color:var(--purple);">
+              ${state.emailConfigured ? '🟢 SMTP ACTIVE' : '🟡 GMAIL READY'}
+            </span>
+          </div>
+
+          <div class="form-group" style="margin-bottom:8px;">
+            <label class="form-label" style="font-size:11px;">Sender Business Email</label>
+            <input type="email" id="email-input-sender" class="form-input" style="font-size:12px; padding:7px 10px;" value="riyansh.studio007@gmail.com">
+          </div>
+
+          <div class="form-group" style="margin-bottom:8px;">
+            <label class="form-label" style="font-size:11px;">Gmail 16-Char App Password (or SMTP Pass)</label>
+            <input type="password" id="email-input-pass" class="form-input" style="font-size:12px; padding:7px 10px;" placeholder="xxxx xxxx xxxx xxxx">
+            <span style="font-size:10px; color:var(--text-muted); display:block; margin-top:3px;">
+              Generated from Google Account > Security > App Passwords.
+            </span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+            <button class="btn-primary" style="width:100%; justify-content:center; padding:8px; font-size:12px; background:linear-gradient(135deg, var(--purple), var(--blue)); box-shadow:0 0 15px var(--purple-glow);" onclick="saveEmailConfig()">
+              💾 Save Email SMTP Settings
+            </button>
+            <button class="btn-secondary" style="width:100%; justify-content:center; padding:8px; font-size:12px;" onclick="sendTestEmailToMyInbox()">
+              📨 Send Test Email to riyansh.studio007@gmail.com
+            </button>
+          </div>
+        </div>
+
         <!-- WhatsApp API & Number Connection Card -->
         <div class="info-card" style="border: 1px solid var(--cyan); background: rgba(0, 242, 254, 0.04);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -609,16 +643,6 @@ function renderAiSales(el) {
               <span style="color:var(--red); font-weight:600;">STOP</span>
             </div>
           </div>
-        </div>
-
-        <div class="info-card">
-          <h4><span>🛡️</span> Strict Anti-Spam Guardrails</h4>
-          <p style="font-size:11px; color:var(--text-secondary); line-height:1.5;">
-            • Zero unsolicited cold WhatsApp blasts.<br>
-            • Only Meta-approved templates sent initially.<br>
-            • Freeform text permitted only after prospect replies.<br>
-            • Instant suppression if prospect texts "STOP".
-          </p>
         </div>
 
         <div class="info-card">
@@ -749,6 +773,53 @@ async function sendTestWhatsAppToMyNumber() {
     }
   } catch (err) {
     alert('Failed to send test WhatsApp: ' + err.message);
+  }
+}
+
+async function saveEmailConfig() {
+  const senderEmail = document.getElementById('email-input-sender')?.value.trim() || 'riyansh.studio007@gmail.com';
+  const smtpPass = document.getElementById('email-input-pass')?.value.trim() || '';
+
+  try {
+    const res = await fetch('/api/email/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senderEmail, smtpPass })
+    });
+    const data = await res.json();
+    if (data.success) {
+      state.emailConfigured = data.configured;
+      alert(`🎉 Cold Email Dispatcher Configured!\n\nSender: ${data.senderEmail}\nStatus: ${data.configured ? 'LIVE SMTP ACTIVE' : 'Saved (Ready for Gmail App Password)'}\n\nAutomated Day-0 cold emails and multi-touch follow-ups will send directly from this inbox.`);
+      const pill = document.getElementById('email-connection-pill');
+      if (pill) {
+        pill.innerText = data.configured ? '🟢 SMTP ACTIVE' : '🟡 GMAIL READY';
+        pill.style.color = data.configured ? 'var(--green)' : 'var(--purple)';
+        pill.style.borderColor = data.configured ? 'var(--green)' : 'var(--purple)';
+      }
+    }
+  } catch (err) {
+    alert('Failed to save email config: ' + err.message);
+  }
+}
+
+async function sendTestEmailToMyInbox() {
+  const senderEmail = document.getElementById('email-input-sender')?.value.trim() || 'riyansh.studio007@gmail.com';
+  try {
+    const res = await fetch('/api/email/test-send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: senderEmail })
+    });
+    const data = await res.json();
+    if (data.status === 'DELIVERED') {
+      alert(`✅ Live Email Delivered!\nMessage ID: ${data.messageId}\nCheck your inbox at ${senderEmail}!`);
+    } else if (data.status === 'SIMULATED_DISPATCHED') {
+      alert(`📨 Email Staged in Outbox for ${senderEmail}!\n\n"${data.note}"\n\nEnter your 16-character Gmail App Password in the box above to send live over the internet.`);
+    } else {
+      alert(`Email Status: ${data.status}\n${data.error || ''}`);
+    }
+  } catch (err) {
+    alert('Failed to send test email: ' + err.message);
   }
 }
 
