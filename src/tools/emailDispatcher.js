@@ -179,3 +179,4 @@ class EmailDispatcher {
 }
 
 module.exports = new EmailDispatcher();
+

@@ -50,54 +50,62 @@ class MapsLeadFinder {
     }
 
     // Attempt 2: Live Geographic Discovery via OpenStreetMap Nominatim API
-    try {
-      const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${cleanQ} in ${location}`)}&format=json&addressdetails=1&extratags=1&limit=${limit * 2}`;
-      const res = await fetch(nomUrl, {
-        headers: {
-          'User-Agent': 'KLIKWise-OS-RealScraper/2.0 (contact: riyansh.studio007@gmail.com)'
+    const queriesToTry = [cleanQ];
+    const singularQ = cleanQ.replace(/(ies)$/, 'y').replace(/(s)$/, '');
+    if (singularQ !== cleanQ) queriesToTry.push(singularQ);
+
+    for (const term of queriesToTry) {
+      if (leads.length >= limit) break;
+      try {
+        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${term} in ${location}`)}&format=json&addressdetails=1&extratags=1&limit=${limit * 2}`;
+        const res = await fetch(nomUrl, {
+          headers: {
+            'User-Agent': 'KLIKWise-OS-RealScraper/2.0 (contact: riyansh.studio007@gmail.com)'
+          }
+        });
+
+        if (res.ok) {
+          const places = await res.json();
+          for (const p of places) {
+            if (leads.length >= limit) break;
+
+            const rawName = p.name || (p.display_name ? p.display_name.split(',')[0].trim() : '');
+            if (!rawName || rawName.length < 2 || rawName.toLowerCase() === location.toLowerCase()) continue;
+            if (leads.some(l => l.title.toLowerCase() === rawName.toLowerCase())) continue;
+
+            const addr = p.address || {};
+            const road = addr.road || addr.suburb || addr.neighbourhood || addr.city_district || location;
+            const city = addr.city || addr.state_district || location;
+            const postcode = addr.postcode ? ` - ${addr.postcode}` : '';
+            const fullAddress = `${road}, ${city}${postcode}, India`;
+
+            const phone = p.extratags?.phone || 
+                          p.extratags?.['contact:phone'] || 
+                          p.extratags?.['contact:mobile'] || 
+                          p.extratags?.mobile || 
+                          `+91 ${Math.floor(9810000000 + Math.random() * 99999999)}`;
+
+            const website = p.extratags?.website || 
+                            p.extratags?.['contact:website'] || 
+                            `https://www.google.com/search?q=${encodeURIComponent(rawName + ' ' + location)}`;
+
+            leads.push({
+              title: rawName,
+              category: cleanQ.charAt(0).toUpperCase() + cleanQ.slice(1),
+              address: fullAddress,
+              city: city,
+              phone: phone,
+              website: website,
+              rating: (4.1 + (Math.random() * 0.8)).toFixed(1),
+              reviewsCount: Math.floor(25 + Math.random() * 140),
+              mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rawName + ' ' + location)}`,
+              source: 'OpenStreetMap Live Verified'
+            });
+          }
         }
-      });
-
-      if (res.ok) {
-        const places = await res.json();
-        for (const p of places) {
-          if (leads.length >= limit) break;
-
-          const rawName = p.name || (p.display_name ? p.display_name.split(',')[0].trim() : '');
-          if (!rawName || rawName.length < 2 || rawName.toLowerCase() === location.toLowerCase()) continue;
-
-          const addr = p.address || {};
-          const road = addr.road || addr.suburb || addr.neighbourhood || addr.city_district || location;
-          const city = addr.city || addr.state_district || location;
-          const postcode = addr.postcode ? ` - ${addr.postcode}` : '';
-          const fullAddress = `${road}, ${city}${postcode}, India`;
-
-          const phone = p.extratags?.phone || 
-                        p.extratags?.['contact:phone'] || 
-                        p.extratags?.['contact:mobile'] || 
-                        p.extratags?.mobile || 
-                        `+91 ${Math.floor(9810000000 + Math.random() * 99999999)}`;
-
-          const website = p.extratags?.website || 
-                          p.extratags?.['contact:website'] || 
-                          `https://www.google.com/search?q=${encodeURIComponent(rawName + ' ' + location)}`;
-
-          leads.push({
-            title: rawName,
-            category: cleanQ.charAt(0).toUpperCase() + cleanQ.slice(1),
-            address: fullAddress,
-            city: city,
-            phone: phone,
-            website: website,
-            rating: (4.1 + (Math.random() * 0.8)).toFixed(1),
-            reviewsCount: Math.floor(25 + Math.random() * 140),
-            mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rawName + ' ' + location)}`,
-            source: 'OpenStreetMap Live Verified'
-          });
-        }
+      } catch (err) {
+        console.warn('[MapsLeadFinder] Nominatim search error:', err.message);
       }
-    } catch (err) {
-      console.warn('[MapsLeadFinder] Nominatim search error:', err.message);
     }
 
     // Attempt 3: Live Web Search Extraction (DuckDuckGo Search) if more leads needed

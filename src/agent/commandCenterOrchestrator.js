@@ -88,12 +88,14 @@ class CommandCenterOrchestrator {
     });
 
     // STEP 5: Deduplicate
-    const seenWebsites = new Set();
+    const seenKeys = new Set();
     const uniqueLeads = [];
     for (const lead of rawLeads) {
-      const dom = (lead.website || lead.title).toLowerCase().replace(/https?:\/\//, '').replace(/\/.*$/, '');
-      if (!seenWebsites.has(dom)) {
-        seenWebsites.add(dom);
+      const key = (lead.website && !lead.website.includes('google.com') && !lead.website.includes('duckduckgo.com'))
+        ? lead.website.toLowerCase().replace(/https?:\/\//, '').replace(/\/.*$/, '')
+        : lead.title.toLowerCase().trim();
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
         uniqueLeads.push(lead);
       }
     }
